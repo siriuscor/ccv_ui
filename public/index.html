@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Manmori Downloader</title>
+  <link rel="stylesheet" href="assets/nes.css">
+  <link rel="stylesheet" href="assets/zpix.css">
+  <script src="assets/preact.js"></script>
+  <style>
+    .main {
+      display: grid;
+      grid-template-areas:
+        "search"
+        "recent"
+        "library";
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto;
+      gap: 20px;
+    }
+
+    .search {
+      grid-area: search;
+      display: grid;
+      grid-template-areas:
+        "searchbar actions"
+        "sites ."
+        "result result";
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+    }
+
+    .recent {
+      grid-area: recent;
+    }
+
+    .library {
+      grid-area: library;
+    }
+
+    .card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 160px;
+      height: 220px;
+      padding: 0 !important;
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-clip: border-box;
+      background-origin: border-box;
+    }
+
+    .card .title {
+      background-color: white;
+      /* border-end-end-radius: 10px; */
+      text-align: center;
+      /* padding-left: 5px; */
+      /* padding-right: 10px; */
+      width: 100%;
+      /* max-width: 100%; */
+      overflow: hidden;
+      white-space: nowrap;
+      margin-top: 20px;
+    }
+
+    .card .author {
+      background-color: white;
+      /* border-end-end-radius: 10px; */
+      text-align: center;
+      padding-left: 5px;
+      padding-right: 5px;
+      width: fit-content;
+      /* max-width: 100%; */
+      overflow: hidden;
+      white-space: nowrap;
+      margin-top: 5px;
+      border-radius: 5px;
+    }
+
+    .side {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      width: 4rem;
+      height: 220px;
+      padding: 0 !important;
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-clip: border-box;
+      background-origin: border-box;
+    }
+
+    .side .title {
+      background-color: white;
+      /* border-end-end-radius: 10px; */
+      text-align: center;
+      /* padding-left: 5px; */
+      /* padding-right: 10px; */
+      /* width: 100%; */
+      /* max-width: 100%; */
+      overflow: hidden;
+      white-space: nowrap;
+      height: fit-content;
+      writing-mode: vertical-lr;
+      text-orientation: upright;
+      letter-spacing: 2px;
+    }
+
+    .side .author {
+      display: none;
+    }
+
+    .dialog-menu {
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+</body>
+
+<script type="module">
+  // import { h, render, createContext } from 'https://esm.sh/preact';
+  // import htm from 'https://esm.sh/htm';
+  // import { useState, useContext, useRef, useEffect, useMemo } from 'https://esm.sh/preact/hooks';
+
+  const html = htm.bind(preact.h);
+  const { useState, useContext, useRef, useEffect, useMemo } = preactHooks;
+  let GlobalContext = preact.createContext();
+
+  let cacheInput = {
+    get: (key) => {
+      return localStorage.getItem(key);
+    },
+    set: (key, value) => {
+      localStorage.setItem(key, value);
+    },
+  };
+
+  let pressed = {};
+  let defaultDebug = false;
+  window.addEventListener('keydown', (e) => {
+    pressed[e.key] = true;
+    console.log('pressed', e.key);
+    if (e.key === 'd' && pressed['Control']) {
+      defaultDebug = !defaultDebug;
+      api.debugMode(defaultDebug);
+    }
+  });
+  window.addEventListener('keyup', (e) => {
+    delete pressed[e.key];
+  });
+
+  preact.render(html`<${App}/>`, document.body);
+
+  function App(props) {
+    let [showMangasModal, setShowMangasModal] = useState(false);
+    let [showChaptersModal, setShowChaptersModal] = useState(false);
+    let [showLoading, setShowLoading] = useState(false);
+    let [mangaInfo, setMangaInfo] = useState({});
+    let [alert, setAlert] = useState(null);
+    let [showSettingModal, setShowSettingModal] = useState(false);
+    const [history, setHistory] = useState(JSON.parse(cacheInput.get('history') || '{}'));
+
+    let sortedHistory = useMemo(() => {
+      if (!history) return [];
+      let sorted = Object.values(history);
+      sorted.sort((a, b) => b.updated - a.updated);
+      console.log('get sorted history', sorted);
+      return sorted;
+    }, [history]);
+
+    let updateHistory = (item, downloadPath) => {
+      let copy = { ...item, ...{ downloadPath: downloadPath, updated: Date.now() } };
+      delete copy.chapters;
+      let newHistory = { ...history, [copy.web]: copy };
+      setHistory(newHistory);
+      cacheInput.set('history', JSON.stringify(newHistory));
+    };
+
+    let deleteHistory = (item) => {
+      let newHistory = { ...history };
+      delete newHistory[item.web];
+      setHistory(newHistory);
+      cacheInput.set('history', JSON.stringify(newHistory));
+    };
+
+    return html`<${GlobalContext.Provider} value=${{
+      showMangasModal, setShowMangasModal,
+      showChaptersModal, setShowChaptersModal,
+      showLoading, setShowLoading,
+      alert, setAlert,
+      showSettingModal, setShowSettingModal,
+      sortedHistory, updateHistory, deleteHistory,
+      mangaInfo, setMangaInfo
+    }}>
+      <div class="nes-container main" style="margin: 0px auto;/*max-width: 980px;*/">
+        <${Search} />
+        <!--<${Recent} />-->
+        <${HistoryDownload} />
+        <${Tasks} />
+        <!--<${Library} />-->
+        <!--<${MangasModal} />-->
+        <${ChaptersModal} />
+        <${SettingModal} />
+        <${Loading} />
+        <${Alert} />
+      </div>
+    </${GlobalContext.Provider}>`;
+  }
+
+  function Search(props) {
+    const { showMangasModal, setShowMangasModal,
+      showChaptersModal, setShowChaptersModal, setShowLoading, setAlert, setShowSettingModal } = useContext(GlobalContext);
+    const [searchResult, setSearchResult] = useState([]);
+    const lastKeyword = localStorage.getItem('lastKeyword') || '';
+    const [sites, setSites] = useState([]);
+
+    useEffect(async () => {
+      let sites = await api.getSites();
+      if (!cacheInput.get('seletedSite')) {
+        cacheInput.set('seletedSite', sites[0].id);
+      }
+      setSites(sites);
+    }, []);
+
+    let search = async () => {
+      let input = document.getElementById('search');
+      let keyword = input.value.trim();
+      // let sites = Array.from(document.querySelectorAll('.nes-radio:checked'))
+      // .map(checkbox => checkbox.id);
+      let sites = Array.from(document.getElementById('sites').selectedOptions)
+        .map(option => option.value);
+      if (!keyword) return;
+      try {
+        setShowLoading(true);
+        console.log('searching for', keyword, 'in sites', sites);
+        localStorage.setItem('lastKeyword', keyword);
+        let result = await api.searchInSite(sites[0], keyword);
+        console.log('search result', result);
+        if (result.length <= 0) {
+          setAlert('没有搜索结果，请尝试其他关键词');
+        } else {
+          setSearchResult(result);
+        }
+      } catch (err) {
+        setAlert('搜索失败, 请稍后再试,错误信息: ' + err.message);
+      }
+      setShowLoading(false);
+    }
+    return html`<div class="search">
+        <div style="grid-area: searchbar;">
+          <div style="display: flex;gap:5px;justify-content: center;">
+          <input type="text" id="search" class="nes-input" style="max-width: 50%;padding: 0rem 0.5rem;" placeholder="输入名称检索" value=${cacheInput.get('lastKeyword')}/>
+          <div class="nes-select" style="max-width: fit-content;">
+            <select id="sites" value=${cacheInput.get('seletedSite')} onChange=${(e) => cacheInput.set('seletedSite', e.target.value)}>
+              ${sites.map((site) => html`<option value=${site.id}>${site.name}</option>`)}
+            </select>
+          </div>
+          <button type="button" class="nes-btn is-primary" style="min-width: fit-content;" onClick=${search}>搜索</button>
+        </div>
+        </div>
+        <div style="grid-area: actions;display:flex;gap:5px;">
+          <button type="button" class="nes-btn is-normal" style="min-width: fit-content;" onClick=${(e) => setShowSettingModal(true)}>设置</button>
+          <!--<button type="button" class="nes-btn is-normal" style="min-width: fit-content;" onClick=${async (e) => { await api.selectFolder() }}>下载</button>-->
+        </div>
+        <${SearchResult} list=${searchResult}/>
+      </div>`;
+  }
+
+  function Sites(props) {
+    const [sites, setSites] = useState([]);
+    useEffect(async () => {
+      setSites(await api.getSites());
+    }, []);
+    return html`<div style="grid-area: sites;text-align: center;">
+      ${sites.map((site) => html`
+        <label>
+          <input type="radio" class="nes-radio" id=${site.id} name="sites"/>
+          <span>${site.name}</span>
+        </label>`)}
+      </div>`;
+  }
+
+  function SearchResult(props) {
+    return html`<div class="search-result" style="grid-area: result;">
+      <h3># 搜索结果</h3>
+      ${props.list <= 0 ? html`没有搜索结果` : html`<${SimpleBookList} type="card" list=${props.list}/>`}
+    </div>`;
+  }
+
+  function HistoryDownload(props) {
+    const { sortedHistory, deleteHistory, setShowLoading, setMangaInfo, setShowChaptersModal } = useContext(GlobalContext);
+    useEffect(async () => {
+    }, []);
+
+    let openChapterDialog = (url) => {
+      return (e) => {
+        e.preventDefault();
+        setShowLoading(true);
+        api.getMangaInfo(url).then(mangaInfo => {
+          console.log('manga info', mangaInfo);
+          setMangaInfo(mangaInfo);
+          setShowChaptersModal(true);
+        }).catch(err => {
+          console.error('get manga info error', err);
+          alert('获取漫画信息失败，请稍后再试');
+        }).finally(() => {
+          setShowLoading(false);
+        })
+      };
+    };
+    return html`<div class="">
+      <h3># 历史记录</h3>
+      <div style="display: flex;gap:5px;flex-direction: row;flex-wrap:wrap; max-height: 300px;overflow-x: hidden;overflow-y: auto;margin-bottom:10px;">
+      ${sortedHistory.length <= 0 ? html`暂无历史记录` : ''}
+        <ul class="nes-list is-disc" style="padding-inline-start: 20px;">
+        ${sortedHistory.map((book, i) => html`
+            <li><a href="#" onclick=${openChapterDialog(book.web)}>
+              <span>${book.title}</span> - <span>${book.author}</span>
+            </a>  <a href='#' onclick=${(e) => deleteHistory(book)}>删除</a></li>
+        `)}
+        </ul>
+        </div>
+    </div>`;
+  }
+
+  function Recent(props) {
+    return html`<div class="recent">
+    <h3># 最近</h3>
+    <${BookList} type="card"/>
+  </div>`;
+  }
+  function Library(props) {
+    return html`<div class="library">
+    <h3># 书库</h3>
+    <${BookList} type="side"/>
+  </div>`;
+  }
+
+  function Tasks(props) {
+    const [tasks, setTasks] = useState([]);
+    const statusMap = {
+      // 'pending': '等待中',
+      'downloading': '下载中',
+      'completed': '已完成',
+      'error': '错误',
+      'packing': '打包中',
+      'pause': '暂停',
+      'cancel': '取消',
+    };
+    const DONE_MARK = '=';
+    const PENDING_MARK = '-';
+    useEffect(async () => {
+      const savedSession = JSON.parse(localStorage.getItem('tasks') || '[]');
+      console.log('get saved session', savedSession);
+      savedSession.forEach(task => {
+        api.loadTask(task);
+      });
+      api.onDownloadProgress((...args) => {
+        console.log('recieve download progress');
+        api.getTaskList().then(tasks => {
+          console.log('download progress', ...args, tasks);
+          setTasks(tasks);
+        });
+      });
+      setTasks(await api.getTaskList());
+    }, []);
+
+    useEffect(() => {
+      console.log('trigger set localStorage', tasks);
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+    }, [tasks]);
+    return html`<div class="tasks">
+      <h3># 下载任务 (${tasks.length}) <a onClick=${() => api.cleanTask()}>清理</a></h3>
+      ${tasks.length <= 0 ? html`<p>暂无下载任务</p>` : html`
+        <div style="max-height: 200px;overflow-x: hidden;overflow-y: auto;" class="nes-table-responsive">
+          <table class="nes-table is-bordered" style="width:100%;">
+            <tbody>
+          ${tasks.map((task, i) => html`<tr key=${task.url}>
+            <td>${task.mangaInfo.title} - ${task.title}</td>
+            <td>[${Array(parseInt(task.progress / 10)).fill(DONE_MARK).join('')}${Array(10 - parseInt(task.progress / 10)).fill(PENDING_MARK).join('')}] (${task.current}/${task.total})</td>
+            <td>${statusMap[task.status]}</td>
+            <td>${['pause', 'error', 'cancel'].includes(task.status) ? html`<a onClick=${() => api.resumeTask(i)}>⏵</a>` : html`<a onClick=${() => api.pauseTask(i)}>⏸</a>`}
+              <a onClick=${() => api.removeTask(i)}>⏹</a></td>
+          </tr>`)}
+            </tbody>
+          </table>
+        </div>`}
+    </div>`;
+  }
+
+  function BookList(props) {
+    let books = props.list || [];
+    let gap = props.type == 'card' ? '10px' : '0px';
+    return html`
+        <div style="display: flex;gap: ${gap};flex-direction: row;">
+          ${books.map((book, i) => html`<${Book} index=${i} type=${props.type} ...${book} />`)}
+        </div>
+    `;
+  }
+
+  function SimpleBookList(props) {
+    const { showChaptersModal, setShowChaptersModal, setMangaInfo, setShowLoading } = useContext(GlobalContext);
+    let openChapterDialog = (url) => {
+      return (event) => {
+        event.preventDefault();
+        console.log('get manga info', url);
+        setShowLoading(true);
+        api.getMangaInfo(url).then(mangaInfo => {
+          console.log('manga info', mangaInfo);
+          setMangaInfo(mangaInfo);
+          setShowChaptersModal(true);
+        }).catch(err => {
+          console.error('get manga info error', err);
+          alert('获取漫画信息失败，请稍后再试');
+        }).finally(() => {
+          setShowLoading(false);
+        })
+      };
+    };
+    return html`
+      <div style="display: flex;gap: 5px;flex-direction: column;max-height: 120px;overflow: hidden;overflow-y: auto;">
+        <ul class="nes-list is-disc" style="padding-inline-start: 20px;">
+        ${props.list.map((book, i) => html`
+            <li><a href="#" onclick=${openChapterDialog(book.url)}>
+              <span>${book.title}</span> - <span>${book.author}</span>
+            </a></li>
+        `)}
+        </ul>
+      </div>
+    `;
+  }
+
+  function Book(props) {
+    const [type, setType] = useState(props.type);
+    let switchClass = (type) => {
+      return (event) => {
+      };
+    };
+    return html`
+      <a href="#" id="book${props.index}" onClick=${switchClass} onMouseOver=${switchClass('card')} onMouseOut=${switchClass('side')}>
+        <div class="nes-container is-rounded ${type}" style="background-image: url(${props.cover});">
+          <div class="title">${props.title}</div>
+          <div class="author">${props.author}</div>
+        </div>
+      </a>
+    `;
+  }
+
+  function MangasModal(props) {
+    let { showMangasModal, setShowMangasModal } = useContext(GlobalContext);
+    if (!showMangasModal) {
+      return null;
+    }
+    let close = () => {
+      setShowMangasModal(false);
+    };
+    return html`<div style="position: fixed;top: 0; left: 0;width: 100vw; height: 100vh;background: rgba(0, 0, 0, 0.5);display: flex;
+  align-items: center;justify-content: center;z-index: 999;">
+      <div class="nes-dialog is-rounded" style="background: white;">
+      <p class="title">Rounded dialog</p>
+      <p>Alert: this is a dialog.</p>
+      <div class="dialog-menu">
+        <button class="nes-btn" onClick=${close}>Cancel</button>
+        <button class="nes-btn is-primary">Confirm</button>
+      </div>
+      </div>
+    </div>`;
+  }
+
+  function ChaptersModal(props) {
+    let { showChaptersModal, setShowChaptersModal, mangaInfo, updateHistory } = useContext(GlobalContext);
+    const [checkedItems, setCheckedItems] = useState([]);
+    const lastCheckedIndex = useRef(null);
+    const [placeholder, setPlaceholder] = useState('');
+    const [downloadPath, setDownloadPath] = useState(cacheInput.get('downloadPath') || '');
+    const [downloadedChapters, setDownloadedChapters] = useState([]);
+
+    let mangaPath = downloadPath;
+    if (!mangaPath.endsWith('/')) mangaPath = mangaPath + '/';
+    mangaPath = mangaPath + mangaInfo.title + '/';
+
+    function computeWeight(title) {
+      let weight = 0;
+      if (!title) return weight;
+      let juanMatch = title.match(/第?\s*([\d\.]+)\s*卷/);
+      if (juanMatch) {
+        weight = (parseFloat(juanMatch[1]) + 1);
+      }
+      let huiMatch = title.match(/第?\s*([\d\.]+)\s*[回话話]/);
+      if (huiMatch) {
+        weight = parseFloat(huiMatch[1]) * 1000;
+      }
+      if (!juanMatch && !huiMatch) {
+        weight = 10000000;
+      }
+      return weight;
+    }
+    if (mangaInfo && mangaInfo.chapters && mangaInfo.chapters.length > 0) {
+      mangaInfo.chapters.sort((a, b) => {
+        return computeWeight(a.title) - computeWeight(b.title);
+      });
+    }
+
+    useEffect(async () => {
+      setPlaceholder(await api.appPath());
+      if (mangaInfo && mangaInfo.title) {
+        // console.log('manga info', mangaInfo, mangaPath);
+        let downloaded = await api.listDir(mangaPath);
+        // console.log('downloaded chapters', downloaded);
+        setDownloadedChapters(downloaded.map(f => f.replace(/\.cbz$|\.epub$|\.zip$/i, '')));
+      }
+    }, [mangaInfo]);
+
+    if (!showChaptersModal) return null;
+    let close = () => {
+      setShowChaptersModal(false);
+      setCheckedItems([]);
+    };
+
+    let handleCheck = (e, index) => {
+      const isChecked = e.target.checked;
+      const newChecked = [...checkedItems];
+
+      if (pressed['Shift'] && lastCheckedIndex.current !== null) {
+        const start = Math.min(index, lastCheckedIndex.current);
+        const end = Math.max(index, lastCheckedIndex.current);
+        for (let i = start; i <= end; i++) {
+          newChecked[i] = true;
+        }
+      } else {
+        newChecked[index] = isChecked;
+      }
+      setCheckedItems(newChecked);
+      lastCheckedIndex.current = index;
+    };
+
+    let confirm = () => {
+      let selectedChapters = mangaInfo.chapters.filter((chapter, i) => checkedItems[i]);
+      // let path = document.getElementById('path').value.trim();
+      // let type = document.getElementById('format').value;
+      let path = cacheInput.get('downloadPath');
+      let type = cacheInput.get('packType') || 'cbz';
+      console.log('selected chapters', selectedChapters, path, type);
+      if (selectedChapters.length === 0) {
+        setAlert('请至少选择一个章节');
+        return;
+      }
+      setShowChaptersModal(false);
+      setCheckedItems([]);
+      if (!path.endsWith('/')) path = path + '/';
+      path = path + mangaInfo.title + '/';
+      api.addChapter(selectedChapters, mangaInfo, path, type);
+      updateHistory(mangaInfo, path);
+    };
+
+    let editPath = (e) => {
+      let downloadPath = e.target.value.trim();
+      // if (!downloadPath.endsWith(mangaInfo.title + '/')) {
+      //   downloadPath = downloadPath + mangaInfo.title + '/';
+      // }
+      setDownloadPath(downloadPath);
+      cacheInput.set('downloadPath', downloadPath);
+    };
+
+    return html`<div style="position: fixed;top: 0; left: 0;width: 100vw; height: 100vh;background: rgba(0, 0, 0, 0.5);display: flex;
+  align-items: center;justify-content: center;z-index: 999;">
+      <div class="nes-dialog is-rounded" style="background: white;width: 80%; margin:auto;">
+      <p>${mangaInfo.title} - ${mangaInfo.author} (${mangaInfo.status})</p>
+      <p>${mangaInfo.intro}</p>
+      <p>下载到 ${mangaPath}, 文件类型 ${cacheInput.get('packType') || 'cbz'}</p>
+      <!--
+      <div class="nes-field is-inline" style="margin-bottom: 10px;gap:5px;">
+        <label for="inline_field" style="text-align: left;margin-right:5px;">下载到</label>
+        <input type="text" id="path" class="nes-input" style="" placeholder=${placeholder} onInput=${editPath} value=${downloadPath}/>
+        <div class="nes-select" style="width: fit-content;">
+          <select id="format" value=${cacheInput.get('packType') || 'cbz'} onChange=${(e) => cacheInput.set('packType', e.target.value)}>
+            <option value="cbz">CBZ</option>
+            <option value="epub">EPUB</option>
+            <option value="zip">ZIP</option>
+          </select>
+        </div>
+      </div>
+      -->
+      <p class="title">选择章节 (${checkedItems.filter((i) => i).length}) <i>按住shift可以多选</i></p>
+      <div style="display: flex;gap:5px;flex-direction: row;flex-wrap:wrap; max-height: 300px;overflow-x: hidden;overflow-y: auto;margin-bottom:10px;user-select: none;-webkit-user-select: none;-moz-user-select: none;-ms-user-select: none;">
+      ${mangaInfo.chapters.map((chapter, i) => html`<label class="nes-pointer" style="margin-bottom: 0px;${downloadedChapters.includes(chapter.title) ? 'text-decoration: line-through;color: gray;' : ''}">
+          <input type="checkbox" class="nes-checkbox" data-url=${chapter.url} 
+            checked=${downloadedChapters.includes(chapter.title) || checkedItems[i]} onChange=${(e) => handleCheck(e, i)} disabled=${downloadedChapters.includes(chapter.title)}/>
+          <span>${chapter.title}</span>
+        </label>
+      `)}
+      </div>
+      <div class="dialog-menu">
+        <button class="nes-btn" onClick=${close} style="margin-right: 10px; width:120px">取消</button>
+        <button class="nes-btn ${checkedItems.filter((i) => i).length <= 0 ? 'is-disabled' : 'is-primary'}" onClick=${confirm} style="width:120px">确认</button>
+      </div>
+      </div>
+    </div>`;
+  }
+
+  function SettingModal(props) {
+    const { showSettingModal, setShowSettingModal } = useContext(GlobalContext);
+    const [placeholder, setPlaceholder] = useState('');
+    let downloadPath = cacheInput.get('downloadPath') || '';
+    let format = cacheInput.get('packType') || 'cbz';
+
+    useEffect(async () => {
+      setPlaceholder(await api.appPath());
+      if (!downloadPath) {
+        setShowSettingModal(true);
+      }
+    }, []);
+
+    if (!showSettingModal) return null;
+    let close = () => {
+      setShowSettingModal(false);
+    };
+    return html`<${Modal} ok=${close}>
+      <p class="title">设置</p>
+      <div class="nes-field" style="display: flex;flex-direction: row;align-items: baseline;width: 100%;margin-bottom: 1em;">
+        <label for="" style="flex-basis: 80px;flex-grow: 0;">下载路径</label>
+        <input type="text" id="downloadPath" class="nes-input" style="display: inline;flex-grow: 1;width: auto;" placeholder=${placeholder} value=${downloadPath} onInput=${(e) => cacheInput.set('downloadPath', e.target.value)}/>
+        <button class="nes-btn is-primary" style="margin-left: 10px;" onClick=${async () => {
+        let path = await api.selectFolder();
+        if (path) {
+          document.getElementById('downloadPath').value = path;
+          cacheInput.set('downloadPath', path);
+        }
+      }}>选择文件夹</button>
+      </div>
+      <div class="nes-field" style="display: flex;flex-direction: row;align-items: baseline;width: 100%;margin-bottom: 1em;">
+        <label for="" style="flex-basis: 80px;flex-grow: 0;">保存类型</label>
+        <div class="nes-select" style="width:auto;">
+        <select id="format" value=${format} onChange=${(e) => cacheInput.set('packType', e.target.value)}>
+            <option value="cbz">CBZ</option>
+            <option value="epub">EPUB</option>
+            <option value="zip">ZIP</option>
+          </select>
+        </div>
+      </div>
+    </${Modal}>`;
+  }
+
+  function Modal(props) {
+    return html`<div style="position: fixed;top: 0; left: 0;width: 100vw; height: 100vh;background: rgba(0, 0, 0, 0.5);display: flex;
+  align-items: center;justify-content: center;z-index: 999;">
+      <div class="nes-dialog is-rounded" style="background: white;width: 70%; margin:auto;">
+      ${props.children}
+      <div class="dialog-menu">
+      ${props.cancel && html`<button class="nes-btn" onClick=${props.cancel} style="width:120px">取消</button>`}
+      ${props.ok && html`<button class="nes-btn is-primary" onClick=${props.ok} style="width:120px">确认</button>`}
+      </div>
+      </div>
+    </div>`;
+  }
+  function Loading(props) {
+    const { showLoading, setShowLoading } = useContext(GlobalContext);
+    if (!showLoading) return null;
+    let chars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+    let [index, setIndex] = useState(0);
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setIndex((index + 1) % chars.length);
+      }, 100);
+      return () => clearInterval(interval);
+    }, [index]);
+
+    return html`<${Modal}>
+      <p style="text-align:center"><img src="assets/loading.gif" style="width: 200px;"/></p>
+      <p> ${chars[index]} 读取中...</p>
+    </${Modal}>`;
+  }
+
+  function Alert(props) {
+    const { alert, setAlert } = useContext(GlobalContext);
+    if (!alert) return null;
+    let close = () => {
+      setAlert(null);
+    };
+    return html`<${Modal} ok=${close}>
+      <p>${alert}</p>
+    </${Modal}>`;
+  }
+
+</script>
+
+</html>

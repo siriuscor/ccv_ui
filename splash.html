@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Manmori</title>
+  <link rel="stylesheet" href="./public/assets/nes.css">
+  <style>
+    @font-face {
+      font-family: ZpixReviewLocal;
+      src: url(./public/assets/zpix.woff2);
+    }
+    body {
+  margin: 0;
+  padding: 0;
+  /* background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); */
+  background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+  /* background: linear-gradient(#7ec8e3, #2b2d42); */
+  background-size: cover;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: ZpixReviewLocal, 'Helvetica Neue', sans-serif;
+  /* color: white; */
+  text-align: center;
+}
+
+/* .container {
+  animation: fadeIn 1.5s ease-in-out;
+} */
+
+.title {
+  font-size: 48px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.slogan {
+  font-size: 20px;
+  margin-bottom: 10px;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+
+.subtitle {
+  font-size: 18px;
+  font-style: italic;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 1s cubic-bezier(0.68, -0.55, 0.27, 1.55), transform 1s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+/* .slogan {
+  font-size: 14px;
+  opacity: 0;
+  margin-top: 20px;
+  transition: opacity 0.5s ease;
+}
+
+.subtitle {
+  font-size: 12px;
+  opacity: 0;
+  margin-top: 10px;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+} */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.hidden {
+  opacity: 0;
+}
+.visible {
+  opacity: 1;
+}
+
+/* .progress-container {
+  width: 80%;
+  height: 16px;
+  background-color: #000;
+  border: 2px solid #fff;
+  margin-bottom: 30px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: repeating-linear-gradient(
+    90deg,
+    #f6d186,
+    #f6d186 4px,
+    #ef476f 4px,
+    #ef476f 8px
+  );
+  transition: width 0.3s steps(4, end);
+} */
+.fade-out {
+  animation: fadeOut 1s forwards;
+}
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 id="title" class="title">Manmori</h1>
+    <p id="slogan" class="slogan">Seize it. Own it.</p>
+    <p id="subtitle" class="subtitle">守りたい、君の物語</p>
+    <progress id="progress-bar" style="height: 1rem" class="nes-progress is-success" value="0" max="100"></progress>
+    <!-- <div class="progress-container">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div> -->
+  </div>
+</body>
+<script>
+const sloganElement = document.getElementById('slogan');
+const subtitleElement = document.getElementById('subtitle');
+const progressBar = document.getElementById('progress-bar');
+
+let progress = 0;
+const interval = setInterval(() => {
+  progress += 1;
+  progressBar.value = progress;
+  // progress += 1;
+  // progressBar.style.width = progress + "%";
+  if (progress >= 100) {
+    clearInterval(interval);
+    document.body.classList.add('fade-out');
+  }
+}, 30);
+
+setTimeout(() => {
+  sloganElement.classList.add('visible');
+}, 500);
+
+setTimeout(() => {
+  subtitleElement.classList.add('visible');
+  subtitleElement.style.transform = 'translateY(0)';
+}, 1000);
+</script>
+</html>
