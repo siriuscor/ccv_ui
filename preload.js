@@ -60,6 +60,9 @@ window.api = {
   async listDir(dir) {
     return await ipcRenderer.invoke('listDir', dir);
   },
+  async listDirs(dir) {
+    return await ipcRenderer.invoke('listDirs', dir);
+  },
   async debugMode(mode) {
     return await ipcRenderer.invoke('debugMode', mode);
   }

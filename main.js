@@ -11,7 +11,7 @@ let browser = null;
 let mainWindow = null;
 let windowIndex = 0;
 let downloadWindow = [];
-let debug = false;
+let debug = true;
 // const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36';
 app.commandLine.appendSwitch('ignore-certificate-errors');
@@ -111,6 +111,19 @@ async function init() {
         }
     });
 
+    ipcMain.handle('listDirs', async (event, dir) => {
+        const fs = require('fs-extra');
+        try {
+            if (!(await fs.exists(dir))) return [];
+            let list = await fs.readdir(dir, { withFileTypes: true });
+            return list.filter(entry => entry.isDirectory())
+                .map(entry => entry.name);
+        } catch (e) {
+            console.error('listDirs error:', e);
+            return [];
+        }
+    });
+
     ipcMain.handle('selectFolder', async () => {
         const result = await dialog.showOpenDialog({
             properties: ['openDirectory']
@@ -205,7 +218,7 @@ const createWindow = async () => {
 
     // and load the index.html of the app.
     // mainWindow.loadFile('index.html')
-    mainWindow.loadFile('public/index.html')
+    mainWindow.loadFile('public/comicui/dist/index.html')
     if (debug) mainWindow.webContents.openDevTools()
     mainWindow.on('close', () => {
         app.quit();
