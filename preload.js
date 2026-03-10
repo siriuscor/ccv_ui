@@ -65,6 +65,12 @@ window.api = {
   },
   async debugMode(mode) {
     return await ipcRenderer.invoke('debugMode', mode);
+  },
+  async getComicFiles(filePath) {
+    return await ipcRenderer.invoke('getComicFiles', filePath);
+  },
+  async getComicImage(filePath, imageName) {
+    return await ipcRenderer.invoke('getComicImage', filePath, imageName);
   }
 };
 

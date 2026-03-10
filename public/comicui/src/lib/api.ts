@@ -58,6 +58,8 @@ declare global {
       listDir: (dir: string) => Promise<string[]>;
       listDirs: (dir: string) => Promise<string[]>;
       debugMode: (mode: boolean) => Promise<void>;
+      getComicFiles: (filePath: string) => Promise<string[]>;
+      getComicImage: (filePath: string, imageName: string) => Promise<string | null>;
     };
   }
 }

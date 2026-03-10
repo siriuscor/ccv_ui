@@ -154,6 +154,46 @@ async function init() {
         }
         console.log('debug mode:', debug);
     });
+
+    ipcMain.handle('getComicFiles', async (event, filePath) => {
+        const fs = require('fs-extra');
+        const JSZip = require('jszip');
+        try {
+            if (!(await fs.exists(filePath))) return [];
+            const data = await fs.readFile(filePath);
+            const zip = await JSZip.loadAsync(data);
+            const imageFiles = [];
+            for (const [name, file] of Object.entries(zip.files)) {
+                if (!file.dir && /\.(jpg|jpeg|png|gif|webp)$/i.test(name)) {
+                    imageFiles.push(name);
+                }
+            }
+            imageFiles.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+            return imageFiles;
+        } catch (e) {
+            console.error('getComicFiles error:', e);
+            return [];
+        }
+    });
+
+    ipcMain.handle('getComicImage', async (event, filePath, imageName) => {
+        const fs = require('fs-extra');
+        const JSZip = require('jszip');
+        try {
+            if (!(await fs.exists(filePath))) return null;
+            const data = await fs.readFile(filePath);
+            const zip = await JSZip.loadAsync(data);
+            const file = zip.file(imageName);
+            if (!file) return null;
+            const content = await file.async('base64');
+            const ext = imageName.split('.').pop().toLowerCase();
+            const mimeType = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+            return `data:${mimeType};base64,${content}`;
+        } catch (e) {
+            console.error('getComicImage error:', e);
+            return null;
+        }
+    });
     // app.on('activate', () => {
     //   if (BrowserWindow.getAllWindows().length === 0) createWindow()
     // });

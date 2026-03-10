@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { BookOpen, Download, Settings } from "lucide-react";
 import ComicSearch from "@/components/ComicSearch";
 import ChapterSelector from "@/components/ChapterSelector";
@@ -11,6 +12,7 @@ import { motion } from "framer-motion";
 type View = { type: "search" } | { type: "chapters"; url: string } | { type: "downloaded"; comic: DownloadedComic };
 
 const Index = () => {
+  const navigate = useNavigate();
   const [view, setView] = useState<View>({ type: "search" });
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   
@@ -38,8 +40,8 @@ const Index = () => {
         }
       }
       setDownloadedComics(comics);
-    } catch (err) {
-      console.error('Fetch downloaded comics error:', err);
+    } catch {
+      // Silently fail - UI will remain empty
     }
   }, [downloadPath]);
 
@@ -64,7 +66,7 @@ const Index = () => {
       await fetchDownloadedComics();
     };
     init();
-  }, []);
+  }, [downloadPath, fetchDownloadedComics]);
 
   useEffect(() => {
     fetchDownloadedComics();
@@ -85,8 +87,8 @@ const Index = () => {
       localStorage.setItem('selectedSite', selectedSite);
       const results = await getApi().searchInSite(selectedSite, keyword);
       setSearchResults(results);
-    } catch (err) {
-      console.error('Search error:', err);
+    } catch {
+      // Search failed - results will remain empty
     }
     setLoading(false);
   }, [selectedSite]);
@@ -103,9 +105,11 @@ const Index = () => {
     setView({ type: "search" });
   }, [downloadPath, packType]);
 
-  const handleRead = useCallback((chapterUrl: string) => {
-    window.open(chapterUrl, '_blank');
-  }, []);
+  const handleRead = useCallback((filePath: string) => {
+    const fileName = filePath.split('/').pop() || '';
+    const comicId = encodeURIComponent(filePath);
+    navigate(`/viewer/${comicId}/1`);
+  }, [navigate]);
 
   const completedCount = tasks.filter(t => t.status === "completed").length;
 
@@ -128,7 +132,8 @@ const Index = () => {
             </div>
             <button 
               onClick={() => setShowSettings(true)}
-              className="p-2 hover:bg-muted rounded-lg transition-colors"
+              className="p-2 hover:bg-muted rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              aria-label="设置"
             >
               <Settings className="w-5 h-5" />
             </button>
