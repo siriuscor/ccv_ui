@@ -46,17 +46,17 @@ export default function DownloadedFiles({ comic, onBack, onRead }: Props) {
       </div>
 
       <ScrollArea className="h-[400px] border-2 border-foreground bg-card">
-        <div className="p-2">
+        <div className="grid grid-cols-3 gap-px bg-border p-px">
           {comic.files.map((file, idx) => (
             <div
               key={idx}
-              className="flex items-center gap-3 p-3 rounded hover:bg-muted transition-colors"
+              className="flex items-center gap-2 px-2.5 py-2 bg-card hover:bg-muted transition-colors"
             >
               {getFileIcon(file)}
               <span className="flex-1 text-sm font-medium truncate">{getFileLabel(file)}</span>
               <button
                 onClick={() => onRead(comic.path + '/' + file)}
-                className="p-1.5 text-muted-foreground hover:text-accent transition-colors"
+                className="p-1 text-muted-foreground hover:text-accent transition-colors shrink-0"
                 title="阅读"
               >
                 <Eye className="w-4 h-4" />

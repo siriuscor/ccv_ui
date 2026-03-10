@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { BookOpen, Download, Settings } from "lucide-react";
 import ComicSearch from "@/components/ComicSearch";
 import ChapterSelector from "@/components/ChapterSelector";
@@ -13,12 +13,19 @@ type View = { type: "search" } | { type: "chapters"; url: string } | { type: "do
 
 const Index = () => {
   const navigate = useNavigate();
-  const [view, setView] = useState<View>({ type: "search" });
+  const location = useLocation();
+  const [view, setView] = useState<View>(() => {
+    const saved = sessionStorage.getItem('lastView');
+    return saved ? JSON.parse(saved) : { type: "search" };
+  });
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   
   const [sites, setSites] = useState<Site[]>([]);
   const [selectedSite, setSelectedSite] = useState("");
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>(() => {
+    const saved = sessionStorage.getItem('lastSearchResults');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [loading, setLoading] = useState(false);
   
   const [downloadPath, setDownloadPath] = useState(localStorage.getItem('downloadPath') || '');
@@ -80,6 +87,14 @@ const Index = () => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    sessionStorage.setItem('lastView', JSON.stringify(view));
+  }, [view]);
+
+  useEffect(() => {
+    sessionStorage.setItem('lastSearchResults', JSON.stringify(searchResults));
+  }, [searchResults]);
+
   const handleSearch = useCallback(async (keyword: string) => {
     setLoading(true);
     try {
@@ -102,11 +117,12 @@ const Index = () => {
     await getApi().addChapter(chapters, mangaInfo, path, packType);
     const taskList = await getApi().getTaskList();
     setTasks(taskList);
+    // After starting download, usually we stay in the current view or return to search if explicitly desired.
+    // However, keeping consistent with original behavior:
     setView({ type: "search" });
   }, [downloadPath, packType]);
 
   const handleRead = useCallback((filePath: string) => {
-    const fileName = filePath.split('/').pop() || '';
     const comicId = encodeURIComponent(filePath);
     navigate(`/viewer/${comicId}/1`);
   }, [navigate]);

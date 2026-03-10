@@ -113,24 +113,25 @@ export default function Viewer() {
     }
   }, [currentPage, images.length, preloadPages, images]);
 
-  const resetControlsTimer = useCallback(() => {
-    setShowControls(true);
-    if (hideControlsTimer.current) {
-      clearTimeout(hideControlsTimer.current);
+  useEffect(() => {
+    if (showControls) {
+      if (hideControlsTimer.current) {
+        clearTimeout(hideControlsTimer.current);
+      }
+      hideControlsTimer.current = setTimeout(() => {
+        setShowControls(false);
+      }, 3000);
+    } else {
+      if (hideControlsTimer.current) {
+        clearTimeout(hideControlsTimer.current);
+      }
     }
-    hideControlsTimer.current = setTimeout(() => {
-      setShowControls(false);
-    }, 3000);
-  }, []);
+  }, [showControls, currentPage]);
 
   useEffect(() => {
     setCurrentPage(0);
-    resetControlsTimer();
-  }, [filePath, resetControlsTimer]);
-
-  useEffect(() => {
-    resetControlsTimer();
-  }, [currentPage, resetControlsTimer]);
+    setShowControls(true);
+  }, [filePath]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -154,7 +155,7 @@ export default function Viewer() {
         } else if (showThumbnails) {
           setShowThumbnails(false);
         } else {
-          navigate("/");
+          navigate(-1);
         }
       } else if (e.key === " " || e.key === "Enter") {
         setShowControls(prev => !prev);
@@ -267,8 +268,8 @@ export default function Viewer() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center manga-panel p-8">
           <p className="font-serif text-xl text-destructive mb-4">{error}</p>
-          <button onClick={() => navigate("/")} className="text-accent hover:underline">
-            返回首页
+          <button onClick={() => navigate(-1)} className="text-accent hover:underline">
+            返回
           </button>
         </div>
       </div>
@@ -280,8 +281,8 @@ export default function Viewer() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center manga-panel p-8">
           <p className="font-serif text-2xl">未找到漫画</p>
-          <button onClick={() => navigate("/")} className="mt-4 text-accent hover:underline">
-            返回首页
+          <button onClick={() => navigate(-1)} className="mt-4 text-accent hover:underline">
+            返回
           </button>
         </div>
       </div>
@@ -372,7 +373,7 @@ export default function Viewer() {
           >
             <div className="flex items-center justify-between px-4 py-3">
               <button
-                onClick={() => navigate("/")}
+                onClick={() => navigate(-1)}
                 className="reader-icon-btn flex items-center gap-2"
                 aria-label="返回"
               >
