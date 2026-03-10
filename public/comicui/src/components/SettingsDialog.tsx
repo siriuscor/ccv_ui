@@ -32,7 +32,7 @@ export default function SettingsDialog({ open, onClose, downloadPath, setDownloa
       <div className="relative z-10 w-full max-w-md bg-background border-2 border-foreground p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-serif text-2xl">设置</h2>
-          <button onClick={onClose} className="p-1 hover:bg-muted rounded">
+          <button onClick={onClose} className="p-1 hover:bg-muted rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background" aria-label="关闭设置">
             <X className="w-5 h-5" />
           </button>
         </div>

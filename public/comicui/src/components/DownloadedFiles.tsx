@@ -29,8 +29,8 @@ export default function DownloadedFiles({ comic, onBack, onRead }: Props) {
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <button onClick={onBack} className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-3 transition-colors">
-        <ArrowLeft className="w-4 h-4" /> 返回
+      <button onClick={onBack} className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded">
+        <ArrowLeft className="w-4 h-4" /> 返回搜索
       </button>
 
       <div className="border-b-2 border-foreground pb-3 mb-3">

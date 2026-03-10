@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, CheckCircle, Loader2, FolderOpen, ArrowLeft, Eye } from "lucide-react";
+import { Search, CheckCircle, Loader2, FolderOpen, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { type Site, type SearchResult, type DownloadedComic, getApi } from "@/lib/api";
 import { motion } from "framer-motion";
@@ -105,10 +105,10 @@ export default function ComicSearch({
       <div className="flex border-b-2 border-foreground">
         <button
           onClick={() => setActiveTab("search")}
-          className={`px-4 py-2 font-bold text-sm transition-colors ${
+          className={`px-4 py-2 font-bold text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
             activeTab === "search" 
               ? "border-b-2 border-foreground -mb-px text-foreground" 
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-foreground focus-visible:text-foreground"
           }`}
         >
           <Search className="w-4 h-4 inline mr-1" />
@@ -116,10 +116,10 @@ export default function ComicSearch({
         </button>
         <button
           onClick={() => setActiveTab("downloaded")}
-          className={`px-4 py-2 font-bold text-sm transition-colors ${
+          className={`px-4 py-2 font-bold text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
             activeTab === "downloaded" 
               ? "border-b-2 border-foreground -mb-px text-foreground" 
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-foreground focus-visible:text-foreground"
           }`}
         >
           <CheckCircle className="w-4 h-4 inline mr-1" />
@@ -148,7 +148,7 @@ export default function ComicSearch({
                 <select
                   value={selectedSite}
                   onChange={e => onSiteChange(e.target.value)}
-                  className="bg-transparent text-sm font-bold focus:outline-none cursor-pointer text-foreground hover:text-accent"
+                  className="bg-transparent text-sm font-bold cursor-pointer text-foreground hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background rounded px-1"
                 >
                   {sites.map(site => (
                     <option key={site.id} value={site.id} className="bg-card">{site.name}</option>

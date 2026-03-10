@@ -29,10 +29,10 @@ export default function ChapterSelector({ mangaUrl, onBack, onDownload, onRead, 
         if (downloadPath && info.title) {
           const path = downloadPath + '/' + info.title + '/';
           const files = await getApi().listDir(path);
-          setDownloadedChapters(new Set(files.map(f => f.replace(/\.cbz$|\.epub$|\.zip$/i, ''))));
+          setDownloadedChapters(new Set(files.map(f => f.replace(/\.(cbz|epub|zip)$/i, ''))));
         }
-      } catch (err) {
-        console.error('Get manga info error:', err);
+      } catch {
+        // Failed to load manga info
       }
       setLoading(false);
     };
@@ -41,9 +41,9 @@ export default function ChapterSelector({ mangaUrl, onBack, onDownload, onRead, 
 
   const computeWeight = (title: string) => {
     let weight = 0;
-    const juanMatch = title.match(/第?\s*([\d\.]+)\s*卷/);
+    const juanMatch = title.match(/第?\s*([\d.]+)\s*卷/);
     if (juanMatch) weight = parseFloat(juanMatch[1]) + 1;
-    const huiMatch = title.match(/第?\s*([\d\.]+)\s*[回话話]/);
+    const huiMatch = title.match(/第?\s*([\d.]+)\s*[回话話]/);
     if (huiMatch) weight = parseFloat(huiMatch[1]) * 1000;
     if (!juanMatch && !huiMatch) weight = 10000000;
     return weight;
@@ -59,7 +59,11 @@ export default function ChapterSelector({ mangaUrl, onBack, onDownload, onRead, 
   const toggleChapter = (index: number) => {
     setSelected(prev => {
       const next = new Set(prev);
-      next.has(index) ? next.delete(index) : next.add(index);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
       return next;
     });
   };
@@ -82,7 +86,7 @@ export default function ChapterSelector({ mangaUrl, onBack, onDownload, onRead, 
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.3 }}
       >
-        <button onClick={onBack} className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-2 transition-colors">
+        <button onClick={onBack} className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded">
           <ArrowLeft className="w-4 h-4" /> 返回搜索
         </button>
         <div className="flex items-center justify-center py-20">
@@ -100,7 +104,7 @@ export default function ChapterSelector({ mangaUrl, onBack, onDownload, onRead, 
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <button onClick={onBack} className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-2 transition-colors">
+      <button onClick={onBack} className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded">
         <ArrowLeft className="w-4 h-4" /> 返回搜索
       </button>
 
@@ -124,11 +128,11 @@ export default function ChapterSelector({ mangaUrl, onBack, onDownload, onRead, 
 
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
-          <button onClick={toggleAll} className="flex items-center gap-1.5 text-sm hover:text-foreground text-muted-foreground transition-colors">
+          <button onClick={toggleAll} className="flex items-center gap-1.5 text-sm hover:text-foreground text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded px-1">
             {selected.size === mangaInfo.chapters.length ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
             {selected.size === mangaInfo.chapters.length ? "取消全选" : "全选"}
           </button>
-          <button onClick={() => setSortAsc(!sortAsc)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={() => setSortAsc(!sortAsc)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded px-1">
             <ChevronsUpDown className="w-4 h-4" />
             {sortAsc ? "正序" : "倒序"}
           </button>

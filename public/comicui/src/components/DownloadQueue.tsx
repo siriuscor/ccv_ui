@@ -49,7 +49,7 @@ export default function DownloadQueue({ items, onPause, onResume, onRemove, onCl
         <h3 className="manga-header text-lg">
           下载列表 ({completed}/{total})
         </h3>
-        <button onClick={onClear} className="text-muted-foreground hover:text-destructive transition-colors">
+        <button onClick={onClear} className="text-muted-foreground hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded p-1" aria-label="清空下载列表">
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
@@ -80,15 +80,15 @@ export default function DownloadQueue({ items, onPause, onResume, onRemove, onCl
               </span>
               <div className="flex gap-0.5 shrink-0">
                 {['pause', 'error', 'cancel'].includes(item.status) ? (
-                  <button onClick={() => onResume(idx)} className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground">
+                  <button onClick={() => onResume(idx)} className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1" aria-label="继续">
                     <Play className="w-3 h-3" />
                   </button>
                 ) : item.status === "downloading" ? (
-                  <button onClick={() => onPause(idx)} className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground">
+                  <button onClick={() => onPause(idx)} className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1" aria-label="暂停">
                     <Pause className="w-3 h-3" />
                   </button>
                 ) : null}
-                <button onClick={() => onRemove(idx)} className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-destructive">
+                <button onClick={() => onRemove(idx)} className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1" aria-label="删除">
                   <Trash2 className="w-3 h-3" />
                 </button>
               </div>

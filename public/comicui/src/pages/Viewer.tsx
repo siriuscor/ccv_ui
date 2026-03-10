@@ -225,7 +225,6 @@ export default function Viewer() {
   }, [totalPages, readingMode, isVertical]);
 
   const handleTapZone = useCallback((zone: "left" | "center" | "right") => {
-    resetControlsTimer();
     if (zone === "center") {
       setShowControls(prev => !prev);
       return;
@@ -244,7 +243,7 @@ export default function Viewer() {
         setCurrentPage(p => Math.max(p - 1, 0));
       }
     }
-  }, [totalPages, readingMode, resetControlsTimer]);
+  }, [totalPages, readingMode]);
 
   const getComicTitle = () => {
     if (!filePath) return "未知漫画";
@@ -299,7 +298,6 @@ export default function Viewer() {
       style={{ filter: `brightness(${brightness}%)` }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      onClick={() => resetControlsTimer()}
     >
       <div className="reader-progress" style={{ width: `${progress}%` }} />
 

@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
@@ -14,8 +15,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["'Noto Sans SC'", "system-ui", "sans-serif"],
-        serif: ["'Noto Serif SC'", "serif", "system-ui"],
+        sans: ["'Noto Sans SC'", "'Noto Sans JP'", "system-ui", "sans-serif"],
+        serif: ["'Noto Serif SC'", "'Noto Serif JP'", "serif", "system-ui"],
+        jp: ["'Noto Serif JP'", "serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -58,6 +60,13 @@ export default {
           paper: "hsl(var(--manga-paper))",
           gold: "hsl(var(--manga-gold))",
         },
+        reader: {
+          bg: "hsl(var(--reader-bg))",
+          surface: "hsl(var(--reader-surface))",
+          ink: "hsl(var(--reader-ink))",
+          muted: "hsl(var(--reader-muted))",
+          accent: "hsl(var(--reader-accent))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -95,5 +104,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;
