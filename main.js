@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron')
 const path = require('node:path')
 const pie = require("puppeteer-in-electron")
 const puppeteer = require("puppeteer-core");
-const { Mantaku } = require('./src/mantaku');
+const { Mantaku, SiteManager } = require('./src/mantaku');
 const { TaskManager, TaskQueue } = require('./src/task');
 
 const mantaku = new Mantaku();
@@ -57,6 +57,10 @@ async function init() {
 
     ipcMain.handle('getSites', async (event) => {
         return await mantaku.listSites();
+    });
+
+    ipcMain.handle('checkSites', async (event, sites) => {
+        return await SiteManager.checkConnectivity(sites);
     });
 
     ipcMain.handle('getMangaInfo', async (event, url) => {
@@ -257,8 +261,12 @@ const createWindow = async () => {
     })
 
     // and load the index.html of the app.
-    // mainWindow.loadFile('index.html')
-    mainWindow.loadFile('public/comicui/dist/index.html')
+    if (process.env.PROD_TEST === 'true' || app.isPackaged) {
+        mainWindow.loadFile(path.join(__dirname, 'public/comicui/dist/index.html'))
+    } else {
+        // Fallback or dev mode (e.g., loading from a dev server if implemented)
+        mainWindow.loadFile(path.join(__dirname, 'public/comicui/dist/index.html'))
+    }
     if (debug) mainWindow.webContents.openDevTools()
     mainWindow.on('close', () => {
         app.quit();

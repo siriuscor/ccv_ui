@@ -7,6 +7,9 @@ window.api = {
   async getSites() {
     return await ipcRenderer.invoke('getSites');
   },
+  async checkSites(sites) {
+    return await ipcRenderer.invoke('checkSites', sites);
+  },
   // async searchInSites(keyword, sites) {
   //   return await ipcRenderer.invoke('searchInSites', keyword, sites);
   // },

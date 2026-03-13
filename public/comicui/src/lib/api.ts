@@ -1,6 +1,13 @@
 export interface Site {
   id: string;
   name: string;
+  home?: string;
+}
+
+export interface SiteStatus {
+  id: string;
+  status: 'ok' | 'timeout' | 'error';
+  latency: number;
 }
 
 export interface SearchResult {
@@ -45,6 +52,7 @@ declare global {
     api: {
       searchInSite: (site: string, keyword: string) => Promise<SearchResult[]>;
       getSites: () => Promise<Site[]>;
+      checkSites: (sites: Site[]) => Promise<SiteStatus[]>;
       getMangaInfo: (url: string) => Promise<MangaInfo>;
       addChapter: (chapters: { title: string; url: string }[], mangaInfo: MangaInfo, path: string, type: string) => Promise<void>;
       loadTask: (task: TaskItem) => Promise<void>;

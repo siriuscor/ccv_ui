@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Search, CheckCircle, Loader2, FolderOpen, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { type Site, type SearchResult, type DownloadedComic, getApi } from "@/lib/api";
+import { type Site, type SiteStatus, type SearchResult, type DownloadedComic, getApi } from "@/lib/api";
 import { motion } from "framer-motion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -14,6 +14,7 @@ type Props = {
   searchResults: SearchResult[];
   downloadedComics: DownloadedComic[];
   loading?: boolean;
+  siteStatuses?: Record<string, SiteStatus>;
   onSearch: (keyword: string) => void;
 };
 
@@ -26,6 +27,7 @@ export default function ComicSearch({
   searchResults,
   downloadedComics = [],
   loading = false,
+  siteStatuses = {},
   onSearch 
 }: Props) {
   const [query, setQuery] = useState("");
@@ -150,9 +152,20 @@ export default function ComicSearch({
                   onChange={e => onSiteChange(e.target.value)}
                   className="bg-transparent text-sm font-bold cursor-pointer text-foreground hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background rounded px-1"
                 >
-                  {sites.map(site => (
-                    <option key={site.id} value={site.id} className="bg-card">{site.name}</option>
-                  ))}
+                  {sites.map(site => {
+                    const status = siteStatuses[site.id];
+                    let statusText = "";
+                    if (status) {
+                      if (status.status === 'ok') statusText = ` (${status.latency}ms)`;
+                      else if (status.status === 'timeout') statusText = " (超时)";
+                      else statusText = " (错误)";
+                    }
+                    return (
+                      <option key={site.id} value={site.id} className="bg-card">
+                        {site.name}{statusText}
+                      </option>
+                    );
+                  })}
                 </select>
               </>
             )}

@@ -1,12 +1,12 @@
-if(typeof __mantaku == 'undefined') var __mantaku = {};
+if (typeof __mantaku == 'undefined') var __mantaku = {};
 __mantaku = Object.assign(__mantaku, {
     id: 'mangabz',
-    name : 'Mangabz(需翻墙)',
+    name: 'Mangabz',
     home: 'https://www.mangabz.com',
     canHandle: function canHandle(url) {
         return (url.match('www.mangabz.com') || url.match('www.xmanhua.com'));
     },
-    searchUrl : function searchUrl(query) {
+    searchUrl: function searchUrl(query) {
         return `https://www.mangabz.com/search?title=${query}`;
     },
     mangaInfo: async function mangaInfo() {
@@ -22,7 +22,7 @@ __mantaku = Object.assign(__mantaku, {
             }).reverse()
         };
     },
-    search: async function() {
+    search: async function () {
         let list = document.querySelectorAll('.mh-item');
         return Array.from(list).map(li => {
             return {

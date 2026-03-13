@@ -15,7 +15,7 @@ class Mantaku {
             await this.initHeadlessBrowser(opts.puppeteerOpts);
         }
         const { PuppeteerBlocker } = require('@cliqz/adblocker-puppeteer');
-        this.blocker = PuppeteerBlocker.parse(fs.readFileSync(__dirname + '/easylist.txt', 'utf-8'));
+        this.blocker = PuppeteerBlocker.parse(fs.readFileSync(p.join(__dirname, 'easylist.txt'), 'utf-8'));
     }
 
     listSites() {
@@ -62,7 +62,7 @@ class Mantaku {
 
 class SiteManager {
     static sites = null;
-    static scriptPath = __dirname + '/sites/';
+    static scriptPath = p.join(__dirname, 'sites/');
     static async load(forceReload = false) {
         if (this.sites && !forceReload) return;
         this.sites = {};
@@ -120,6 +120,31 @@ class SiteManager {
             return await __mantaku.search();
         });
         return result;
+    }
+
+    static async checkConnectivity(sites) {
+        const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36';
+        console.log('begin check connectivity');
+        const results = await Promise.all(sites.map(async (site) => {
+            const start = Date.now();
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                const response = await fetch(site.home, {
+                    signal: controller.signal,
+                    headers: { 'User-Agent': UA }
+                });
+                clearTimeout(timeoutId);
+                const latency = Date.now() - start;
+                console.log('check site', site, latency);
+                return { id: site.id, status: (response.ok || response.status === 403) ? 'ok' : 'error', latency };
+            } catch (e) {
+                const latency = Date.now() - start;
+                console.log('check site error', site.id, e.name, latency);
+                return { id: site.id, status: e.name === 'AbortError' ? 'timeout' : 'error', latency };
+            }
+        }));
+        return results;
     }
 }
 

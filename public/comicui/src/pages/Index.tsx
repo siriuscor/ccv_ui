@@ -6,7 +6,7 @@ import ChapterSelector from "@/components/ChapterSelector";
 import DownloadedFiles from "@/components/DownloadedFiles";
 import DownloadQueue from "@/components/DownloadQueue";
 import SettingsDialog from "@/components/SettingsDialog";
-import { type Site, type SearchResult, type MangaInfo, type TaskItem, type DownloadedComic, getApi } from "@/lib/api";
+import { type Site, type SiteStatus, type SearchResult, type MangaInfo, type TaskItem, type DownloadedComic, getApi } from "@/lib/api";
 import { motion } from "framer-motion";
 
 type View = { type: "search" } | { type: "chapters"; url: string } | { type: "downloaded"; comic: DownloadedComic };
@@ -14,20 +14,39 @@ type View = { type: "search" } | { type: "chapters"; url: string } | { type: "do
 const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        const nextDebug = !localStorage.getItem('debugMode');
+        if (nextDebug) {
+          localStorage.setItem('debugMode', 'true');
+        } else {
+          localStorage.removeItem('debugMode');
+        }
+        getApi().debugMode(nextDebug);
+        console.log('debug mode toggled:', nextDebug);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
   const [view, setView] = useState<View>(() => {
     const saved = sessionStorage.getItem('lastView');
     return saved ? JSON.parse(saved) : { type: "search" };
   });
   const [tasks, setTasks] = useState<TaskItem[]>([]);
-  
+
   const [sites, setSites] = useState<Site[]>([]);
+  const [siteStatuses, setSiteStatuses] = useState<Record<string, SiteStatus>>({});
   const [selectedSite, setSelectedSite] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>(() => {
     const saved = sessionStorage.getItem('lastSearchResults');
     return saved ? JSON.parse(saved) : [];
   });
   const [loading, setLoading] = useState(false);
-  
+
   const [downloadPath, setDownloadPath] = useState(localStorage.getItem('downloadPath') || '');
   const [packType, setPackType] = useState(localStorage.getItem('packType') || 'cbz');
   const [showSettings, setShowSettings] = useState(false);
@@ -64,6 +83,25 @@ const Index = () => {
         const saved = localStorage.getItem('selectedSite');
         setSelectedSite(saved || siteList[0].id);
       }
+
+      // Check site connectivity and sort
+      getApi().checkSites(siteList).then(statuses => {
+        const statusMap = statuses.reduce((acc, s) => ({ ...acc, [s.id]: s }), {} as Record<string, SiteStatus>);
+        setSiteStatuses(statusMap);
+
+        const sortedSites = [...siteList].sort((a, b) => {
+          const sA = statusMap[a.id];
+          const sB = statusMap[b.id];
+          if (!sA && !sB) return 0;
+          if (!sA) return 1;
+          if (!sB) return -1;
+          if (sA.status === 'ok' && sB.status === 'ok') return sA.latency - sB.latency;
+          if (sA.status === 'ok') return -1;
+          if (sB.status === 'ok') return 1;
+          return 0;
+        });
+        setSites(sortedSites);
+      });
       if (!downloadPath) {
         const appPath = await getApi().appPath();
         setShowSettings(true);
@@ -146,7 +184,7 @@ const Index = () => {
               <Download className="w-4 h-4" />
               {completedCount}/{tasks.length} 完成
             </div>
-            <button 
+            <button
               onClick={() => setShowSettings(true)}
               className="p-2 hover:bg-muted rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               aria-label="设置"
@@ -172,6 +210,7 @@ const Index = () => {
                   onSelectDownloaded={handleSelectDownloaded}
                   sites={sites}
                   selectedSite={selectedSite}
+                  siteStatuses={siteStatuses}
                   onSiteChange={setSelectedSite}
                   searchResults={searchResults}
                   downloadedComics={downloadedComics}

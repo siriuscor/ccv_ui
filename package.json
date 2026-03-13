@@ -7,7 +7,12 @@
     "start": "electron .",
     "test": "node server.js",
     "package": "npx electron-packager . Manmori --platform=darwin --arch=arm64 --overwrite --icon=public/icon.icns --asar --prune=true",
-    "pack-win": "npx electron-packager . Manmori --platform=win32 --arch=x64 --overwrite --icon=public/icon.ico --prune=true --out=dist"
+    "pack-win": "npx electron-packager . Manmori --platform=win32 --arch=x64 --overwrite --icon=public/icon.ico --prune=true --out=dist",
+    "dist-win": "electron-builder --win --x64",
+    "dist-mac": "electron-builder --mac",
+    "dist-all": "electron-builder --win --mac",
+    "build-all": "cd public/comicui && npm run build && cd ../.. && npm run dist-win",
+    "test-prod": "PROD_TEST=true electron ."
   },
   "keywords": [
     "comic",
@@ -30,5 +35,36 @@
     "electron": "^31.2.1",
     "electron-builder": "^26.0.12",
     "electron-packager": "^17.1.2"
+  },
+  "build": {
+    "appId": "com.manmori.app",
+    "productName": "Manmori",
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "public/comicui/dist/**/*",
+      "public/icon.png",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "public/icon.png"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }
