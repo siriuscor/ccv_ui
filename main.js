@@ -235,49 +235,51 @@ const createWindow = async () => {
     // console.log(page.url());
     // window.destroy();
 
-    // const splashWindow = new BrowserWindow({
-    //   width: 400,
-    //   height: 300,
-    //   frame: false, // 无边框
-    //   transparent: true, // 背景透明
-    //   alwaysOnTop: true,
-    //   resizable: false,
-    //   show: false,
-    // })
-
-    // splashWindow.loadFile('splash.html')
-    // splashWindow.once('ready-to-show', () => {
-    //   splashWindow.show();
-    // });
-
-    // setTimeout(() => {
-    //   splashWindow.close();
-    mainWindow = new BrowserWindow({
-        width: 648,
-        height: 1152,
+    const splashWindow = new BrowserWindow({
+        width: parseInt(648 * 0.8),
+        height: parseInt(1152 * 0.8),
+        frame: false,
+        transparent: true,
+        alwaysOnTop: true,
+        resizable: false,
+        show: false,
         webPreferences: {
-            preload: path.join(__dirname, 'preload.js')
+            nodeIntegration: false,
+            contextIsolation: true
         }
     })
 
-    // and load the index.html of the app.
-    if (process.env.PROD_TEST === 'true' || app.isPackaged) {
-        mainWindow.loadFile(path.join(__dirname, 'public/comicui/dist/index.html'))
-    } else {
-        // Fallback or dev mode (e.g., loading from a dev server if implemented)
-        mainWindow.loadFile(path.join(__dirname, 'public/comicui/dist/index.html'))
-    }
-    if (debug) mainWindow.webContents.openDevTools()
-    mainWindow.on('close', () => {
-        app.quit();
+    splashWindow.loadFile(path.join(__dirname, 'public/splash.html'))
+    splashWindow.once('ready-to-show', () => {
+        splashWindow.show();
     });
-    // }, 10000);
-    // setTimeout(() => {
-    //   startup.close();
-    // }, 10000);
 
-    // return;
+    setTimeout(() => {
+        mainWindow = new BrowserWindow({
+            width: 648,
+            height: 1152,
+            show: false,
+            webPreferences: {
+                preload: path.join(__dirname, 'preload.js')
+            }
+        })
 
+        if (process.env.PROD_TEST === 'true' || app.isPackaged) {
+            mainWindow.loadFile(path.join(__dirname, 'public/comicui/dist/index.html'))
+        } else {
+            mainWindow.loadFile(path.join(__dirname, 'public/comicui/dist/index.html'))
+        }
+
+        mainWindow.once('ready-to-show', () => {
+            splashWindow.close();
+            mainWindow.show();
+            if (debug) mainWindow.webContents.openDevTools()
+        });
+
+        mainWindow.on('close', () => {
+            app.quit();
+        });
+    }, 4000);
 }
 // createWindow()
 // app.whenReady().then(() => {
