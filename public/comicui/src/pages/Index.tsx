@@ -177,7 +177,7 @@ const Index = () => {
             <div className="w-10 h-10 bg-foreground flex items-center justify-center border-2 border-foreground">
               <BookOpen className="w-5 h-5 text-background" />
             </div>
-            <h1 className="manga-header text-3xl tracking-wide">漫画下载器</h1>
+            <h1 className="manga-header text-3xl tracking-wide">Manmori</h1>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 text-sm text-muted-foreground font-bold">
