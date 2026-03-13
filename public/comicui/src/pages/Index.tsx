@@ -9,7 +9,7 @@ import SettingsDialog from "@/components/SettingsDialog";
 import { type Site, type SiteStatus, type SearchResult, type MangaInfo, type TaskItem, type DownloadedComic, getApi } from "@/lib/api";
 import { motion } from "framer-motion";
 
-type View = { type: "search" } | { type: "chapters"; url: string } | { type: "downloaded"; comic: DownloadedComic };
+type View = { type: "search"; tab: "search" | "downloaded" | "queue" } | { type: "chapters"; url: string } | { type: "downloaded_viewer"; comic: DownloadedComic };
 
 const Index = () => {
   const navigate = useNavigate();
@@ -34,7 +34,7 @@ const Index = () => {
   }, []);
   const [view, setView] = useState<View>(() => {
     const saved = sessionStorage.getItem('lastView');
-    return saved ? JSON.parse(saved) : { type: "search" };
+    return saved ? JSON.parse(saved) : { type: "search", tab: "search" };
   });
   const [tasks, setTasks] = useState<TaskItem[]>([]);
 
@@ -72,7 +72,7 @@ const Index = () => {
   }, [downloadPath]);
 
   const handleSelectDownloaded = useCallback((comic: DownloadedComic) => {
-    setView({ type: "downloaded", comic });
+    setView({ type: "downloaded_viewer", comic });
   }, []);
 
   useEffect(() => {
@@ -157,7 +157,7 @@ const Index = () => {
     setTasks(taskList);
     // After starting download, usually we stay in the current view or return to search if explicitly desired.
     // However, keeping consistent with original behavior:
-    setView({ type: "search" });
+    setView({ type: "search", tab: "search" });
   }, [downloadPath, packType]);
 
   const handleRead = useCallback((filePath: string) => {
@@ -195,57 +195,80 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="relative z-10 container max-w-6xl mx-auto px-4 py-4 screentone" style={{ height: 'calc(100vh - 80px)', overflow: 'hidden' }}>
-        <div className="manga-grid h-full">
-          <div className="manga-frame-cell h-full overflow-hidden">
-            <motion.div
-              key={view.type}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
-            >
-              {view.type === "search" ? (
-                <ComicSearch
-                  onSelect={handleSelectManga}
-                  onSelectDownloaded={handleSelectDownloaded}
-                  sites={sites}
-                  selectedSite={selectedSite}
-                  siteStatuses={siteStatuses}
-                  onSiteChange={setSelectedSite}
-                  searchResults={searchResults}
-                  downloadedComics={downloadedComics}
-                  loading={loading}
-                  onSearch={handleSearch}
-                />
-              ) : view.type === "chapters" ? (
-                <ChapterSelector
-                  mangaUrl={view.url}
-                  onBack={() => setView({ type: "search" })}
-                  onDownload={handleDownload}
-                  onRead={handleRead}
-                  downloadPath={downloadPath}
-                />
-              ) : (
-                <DownloadedFiles
-                  comic={view.comic}
-                  onBack={() => setView({ type: "search" })}
-                  onRead={handleRead}
-                />
-              )}
-            </motion.div>
-          </div>
-
-          <div className="manga-frame-cell h-full overflow-hidden">
-            <div className="h-full overflow-hidden">
-              <DownloadQueue
-                items={tasks}
-                onPause={(idx) => getApi().pauseTask(idx)}
-                onResume={(idx) => getApi().resumeTask(idx)}
-                onRemove={(idx) => getApi().removeTask(idx)}
-                onClear={() => getApi().cleanTask()}
+      <main className="relative z-10 container max-w-6xl mx-auto px-4 py-4 screentone" style={{ height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
+        <div className="h-full">
+          <motion.div
+            key={view.type + (view.type === 'search' ? view.tab : '')}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2 }}
+            className="h-full flex flex-col"
+          >
+            {view.type === "search" ? (
+              <>
+                <div className="flex border-b-[3px] border-foreground mb-4">
+                  <button
+                    onClick={() => setView({ type: "search", tab: "search" })}
+                    className={`flex-1 py-2 font-black italic tracking-tighter ${view.tab === 'search' ? 'bg-foreground text-background' : 'hover:bg-muted'}`}
+                  >
+                    搜索
+                  </button>
+                  <button
+                    onClick={() => setView({ type: "search", tab: "downloaded" })}
+                    className={`flex-1 py-2 font-black italic tracking-tighter border-l-[3px] border-foreground ${view.tab === 'downloaded' ? 'bg-foreground text-background' : 'hover:bg-muted'}`}
+                  >
+                    已下载
+                  </button>
+                  <button
+                    onClick={() => setView({ type: "search", tab: "queue" })}
+                    className={`flex-1 py-2 font-black italic tracking-tighter border-l-[3px] border-foreground ${view.tab === 'queue' ? 'bg-foreground text-background' : 'hover:bg-muted'}`}
+                  >
+                    任务 ({tasks.length})
+                  </button>
+                </div>
+                
+                <div className="flex-1 overflow-hidden">
+                  {view.tab === 'search' || view.tab === 'downloaded' ? (
+                    <ComicSearch
+                      activeTab={view.tab}
+                      onSelect={handleSelectManga}
+                      onSelectDownloaded={handleSelectDownloaded}
+                      sites={sites}
+                      selectedSite={selectedSite}
+                      siteStatuses={siteStatuses}
+                      onSiteChange={setSelectedSite}
+                      searchResults={searchResults}
+                      downloadedComics={downloadedComics}
+                      loading={loading}
+                      onSearch={handleSearch}
+                    />
+                  ) : (
+                    <DownloadQueue
+                      items={tasks}
+                      onPause={(idx) => getApi().pauseTask(idx)}
+                      onResume={(idx) => getApi().resumeTask(idx)}
+                      onRemove={(idx) => getApi().removeTask(idx)}
+                      onClear={() => getApi().cleanTask()}
+                    />
+                  )}
+                </div>
+              </>
+            ) : view.type === "chapters" ? (
+              <ChapterSelector
+                mangaUrl={view.url}
+                onBack={() => setView({ type: "search", tab: "search" })}
+                onDownload={handleDownload}
+                onRead={handleRead}
+                downloadPath={downloadPath}
               />
-            </div>
-          </div>
+            ) : (
+              <DownloadedFiles
+                comic={view.comic}
+                onBack={() => setView({ type: "search", tab: "downloaded" })}
+                onRead={handleRead}
+              />
+            )}
+          </motion.div>
         </div>
       </main>
 

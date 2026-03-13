@@ -51,7 +51,7 @@ export default function ChapterSelector({ mangaUrl, onBack, onDownload, onRead, 
 
   const sortedChapters = useMemo(() => {
     if (!mangaInfo) return [];
-    return [...mangaInfo.chapters].sort((a, b) => 
+    return [...mangaInfo.chapters].sort((a, b) =>
       sortAsc ? computeWeight(a.title) - computeWeight(b.title) : computeWeight(b.title) - computeWeight(a.title)
     );
   }, [mangaInfo, sortAsc]);
@@ -111,7 +111,7 @@ export default function ChapterSelector({ mangaUrl, onBack, onDownload, onRead, 
       {/* Comic info panel */}
       <div className="border-b-2 border-foreground pb-2 mb-2">
         <div className="flex gap-4 items-start">
-          <div className="w-20 h-28 bg-primary shrink-0 flex items-center justify-center border-2 border-foreground">
+          <div className="w-40 h-56 bg-primary shrink-0 flex items-center justify-center border-2 border-foreground">
             {mangaInfo.cover ? (
               <img src={mangaInfo.cover} alt={mangaInfo.title} className="w-full h-full object-cover" />
             ) : (
@@ -150,10 +150,9 @@ export default function ChapterSelector({ mangaUrl, onBack, onDownload, onRead, 
             return (
               <div
                 key={idx}
-                className={`flex items-center gap-2 px-2.5 py-2 transition-colors bg-card ${
-                  isDownloaded ? "bg-manga-success/10" :
-                  isSelected ? "bg-secondary" : "hover:bg-muted"
-                }`}
+                className={`flex items-center gap-2 px-2.5 py-2 transition-colors bg-card ${isDownloaded ? "bg-manga-success/10" :
+                    isSelected ? "bg-secondary" : "hover:bg-muted"
+                  }`}
               >
                 <button
                   onClick={() => toggleChapter(idx)}

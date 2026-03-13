@@ -15,23 +15,24 @@ type Props = {
   downloadedComics: DownloadedComic[];
   loading?: boolean;
   siteStatuses?: Record<string, SiteStatus>;
+  activeTab: "search" | "downloaded";
   onSearch: (keyword: string) => void;
 };
 
-export default function ComicSearch({ 
-  onSelect, 
+export default function ComicSearch({
+  onSelect,
   onSelectDownloaded,
-  sites, 
-  selectedSite, 
+  sites,
+  selectedSite,
   onSiteChange,
   searchResults,
   downloadedComics = [],
   loading = false,
   siteStatuses = {},
-  onSearch 
+  onSearch,
+  activeTab
 }: Props) {
   const [query, setQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"search" | "downloaded">("search");
 
   const handleSearch = () => {
     if (query.trim()) {
@@ -47,12 +48,11 @@ export default function ComicSearch({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2 }}
       onClick={() => onSelect(result.url, result)}
-      className="bg-card p-3 text-left hover:bg-muted transition-colors cursor-pointer group border-b border-r border-border last:border-b-0"
+      className="bg-card p-3 text-left hover:bg-muted transition-colors cursor-pointer group border-b border-r border-border"
     >
       <div className="flex gap-3">
-        <div className={`w-16 h-22 shrink-0 flex items-center justify-center border-2 border-foreground ${
-          isDownloaded ? "bg-manga-success" : "bg-primary"
-        }`}>
+        <div className={`w-16 h-22 shrink-0 flex items-center justify-center border-2 border-foreground ${isDownloaded ? "bg-manga-success" : "bg-primary"
+          }`}>
           {result.cover ? (
             <img src={result.cover} alt={result.title} className="w-full h-full object-cover" />
           ) : (
@@ -102,36 +102,10 @@ export default function ComicSearch({
   );
 
   return (
-    <div className="space-y-3">
-      {/* Tabs */}
-      <div className="flex border-b-2 border-foreground">
-        <button
-          onClick={() => setActiveTab("search")}
-          className={`px-4 py-2 font-bold text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-            activeTab === "search" 
-              ? "border-b-2 border-foreground -mb-px text-foreground" 
-              : "text-muted-foreground hover:text-foreground focus-visible:text-foreground"
-          }`}
-        >
-          <Search className="w-4 h-4 inline mr-1" />
-          搜索
-        </button>
-        <button
-          onClick={() => setActiveTab("downloaded")}
-          className={`px-4 py-2 font-bold text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-            activeTab === "downloaded" 
-              ? "border-b-2 border-foreground -mb-px text-foreground" 
-              : "text-muted-foreground hover:text-foreground focus-visible:text-foreground"
-          }`}
-        >
-          <CheckCircle className="w-4 h-4 inline mr-1" />
-          已下载 ({downloadedComics.length})
-        </button>
-      </div>
-
-      {/* Search Tab */}
+    <div className="flex-1 flex flex-col min-h-0">
+      {/* Search Header - Only visible in search tab */}
       {activeTab === "search" && (
-        <div className="border-b-[3px] border-foreground pb-2">
+        <div className="border-b-[3px] border-foreground pb-2 mb-4">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 flex-1">
               <Search className="w-5 h-5 text-foreground shrink-0" />
@@ -139,84 +113,64 @@ export default function ComicSearch({
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                placeholder="搜索漫画..."
-                className="border-0 bg-transparent text-lg font-bold focus-visible:ring-0 placeholder:text-muted-foreground placeholder:font-normal"
+                placeholder="搜索资源..."
+                className="border-0 bg-transparent text-lg font-black italic focus-visible:ring-0 placeholder:text-muted-foreground px-0"
               />
-              {loading && <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />}
+              {loading && <Loader2 className="w-5 h-5 animate-spin text-muted-foreground mr-2" />}
             </div>
-            {sites.length > 0 && (
-              <>
-                <div className="w-px h-6 bg-foreground/30" />
-                <select
-                  value={selectedSite}
-                  onChange={e => onSiteChange(e.target.value)}
-                  className="bg-transparent text-sm font-bold cursor-pointer text-foreground hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background rounded px-1"
-                >
-                  {sites.map(site => {
-                    const status = siteStatuses[site.id];
-                    let statusText = "";
-                    if (status) {
-                      if (status.status === 'ok') statusText = ` (${status.latency}ms)`;
-                      else if (status.status === 'timeout') statusText = " (超时)";
-                      else statusText = " (错误)";
-                    }
-                    return (
-                      <option key={site.id} value={site.id} className="bg-card">
-                        {site.name}{statusText}
-                      </option>
-                    );
-                  })}
-                </select>
-              </>
-            )}
+
+            <div className="flex items-center gap-2 pr-1 border-l-[3px] border-foreground/20 pl-4">
+              <select
+                value={selectedSite}
+                onChange={e => onSiteChange(e.target.value)}
+                className="bg-transparent text-sm font-black italic cursor-pointer text-foreground hover:text-accent focus-visible:outline-none focus:outline-none appearance-none"
+              >
+                {sites.map(site => {
+                  const status = siteStatuses[site.id];
+                  let statusText = "";
+                  if (status) {
+                    if (status.status === 'ok') statusText = ` (${status.latency}ms)`;
+                    else if (status.status === 'timeout') statusText = " (超时)";
+                    else statusText = " (错误)";
+                  }
+                  return (
+                    <option key={site.id} value={site.id} className="bg-card">
+                      {site.name}{statusText}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Content */}
-      {activeTab === "search" ? (
-        <div className="manga-frame-section">
-          <div className="manga-section-label">
-            <Search className="w-4 h-4" />
-            搜索结果 ({searchResults.length})
+      {/* Results List */}
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full">
+          <div className="grid grid-cols-2 manga-frame-section">
+            {activeTab === "search" ? (
+              searchResults.length > 0 ? (
+                searchResults.map(result => renderComic(result, downloadedComics.some(d => d.title === result.title)))
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground screentone col-span-2">
+                  <Search className="w-12 h-12 mb-4 opacity-10" />
+                  <p className="font-serif italic font-bold">待机中...</p>
+                </div>
+              )
+            ) : (
+              downloadedComics.length > 0 ? (
+                downloadedComics.map(renderDownloadedComic)
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground screentone">
+                  <FolderOpen className="w-12 h-12 mb-4 opacity-10" />
+                  <p className="font-serif italic font-bold">暂无存档</p>
+                </div>
+              )
+            )}
           </div>
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : searchResults.length > 0 ? (
-            <ScrollArea className="h-[400px]">
-              <div className="grid grid-cols-1 sm:grid-cols-2">
-                {searchResults.map(c => renderComic(c, false))}
-              </div>
-            </ScrollArea>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <p>输入关键词搜索漫画</p>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="manga-frame-section">
-          <div className="manga-section-label">
-            <CheckCircle className="w-4 h-4" />
-            已下载 ({downloadedComics.length})
-          </div>
-          {downloadedComics.length > 0 ? (
-            <ScrollArea className="h-[400px]">
-              <div className="grid grid-cols-1 sm:grid-cols-2">
-                {downloadedComics.map(c => renderDownloadedComic(c))}
-              </div>
-            </ScrollArea>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <FolderOpen className="w-8 h-8 mx-auto mb-2" />
-              <p>暂无已下载漫画</p>
-              <p className="text-sm mt-1">在设置中配置下载路径</p>
-            </div>
-          )}
-        </div>
-      )}
+        </ScrollArea>
+      </div>
     </div>
   );
 }

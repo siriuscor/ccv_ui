@@ -253,8 +253,8 @@ const createWindow = async () => {
     // setTimeout(() => {
     //   splashWindow.close();
     mainWindow = new BrowserWindow({
-        width: 1024,
-        height: 768,
+        width: 648,
+        height: 1152,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js')
         }

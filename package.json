@@ -4,7 +4,8 @@
   "description": "grab your loved comic",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "npm run build-web; electron .",
+    "build-web": "cd public/comicui; npx vite build; cd -",
     "test": "node server.js",
     "package": "npx electron-packager . Manmori --platform=darwin --arch=arm64 --overwrite --icon=public/icon.icns --asar --prune=true",
     "pack-win": "npx electron-packager . Manmori --platform=win32 --arch=x64 --overwrite --icon=public/icon.ico --prune=true --out=dist",
