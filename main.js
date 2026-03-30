@@ -243,6 +243,7 @@ const createWindow = async () => {
         alwaysOnTop: true,
         resizable: false,
         show: false,
+        icon: path.join(__dirname, 'public/icon.png'),
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true
@@ -250,15 +251,14 @@ const createWindow = async () => {
     })
 
     splashWindow.loadFile(path.join(__dirname, 'public/splash.html'))
-    splashWindow.once('ready-to-show', () => {
-        splashWindow.show();
-    });
+    splashWindow.show();
 
     setTimeout(() => {
         mainWindow = new BrowserWindow({
             width: 648,
             height: 1152,
             show: false,
+            icon: path.join(__dirname, 'public/icon.png'),
             webPreferences: {
                 preload: path.join(__dirname, 'preload.js')
             }
