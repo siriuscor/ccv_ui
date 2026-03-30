@@ -40,9 +40,6 @@
   "build": {
     "appId": "com.manmori.app",
     "productName": "Manmori",
-    "asarUnpack": [
-      "src/bin/**/*"
-    ],
     "files": [
       "main.js",
       "preload.js",
