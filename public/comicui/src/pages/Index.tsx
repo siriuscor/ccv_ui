@@ -51,6 +51,7 @@ const Index = () => {
   const [packType, setPackType] = useState(localStorage.getItem('packType') || 'cbz');
   const [showSettings, setShowSettings] = useState(false);
   const [downloadedComics, setDownloadedComics] = useState<DownloadedComic[]>([]);
+  const [initialized, setInitialized] = useState(false);
 
   const fetchDownloadedComics = useCallback(async () => {
     if (!downloadPath) return;
@@ -108,7 +109,27 @@ const Index = () => {
         setShowSettings(true);
       }
       const taskList = await getApi().getTaskList();
-      setTasks(taskList);
+      if (taskList.length === 0) {
+        const savedTasksStr = localStorage.getItem('tasks');
+        if (savedTasksStr) {
+          try {
+            const savedTasks = JSON.parse(savedTasksStr);
+            if (Array.isArray(savedTasks) && savedTasks.length > 0) {
+              console.log('Restoring tasks from localStorage:', savedTasks.length);
+              for (const task of savedTasks) {
+                await getApi().loadTask(task);
+              }
+              const restoredTaskList = await getApi().getTaskList();
+              setTasks(restoredTaskList);
+            }
+          } catch (e) {
+            console.error('Failed to parse saved tasks:', e);
+          }
+        }
+      } else {
+        setTasks(taskList);
+      }
+      setInitialized(true);
       await fetchDownloadedComics();
     };
     init();
@@ -132,6 +153,12 @@ const Index = () => {
     }, 1000);
     return () => clearInterval(interval);
   }, [fetchDownloadedComics]);
+
+  useEffect(() => {
+    if (initialized) {
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+  }, [tasks, initialized]);
 
   useEffect(() => {
     sessionStorage.setItem('lastView', JSON.stringify(view));
