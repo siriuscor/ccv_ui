@@ -115,6 +115,17 @@ async function init() {
         }
     });
 
+    ipcMain.handle('readJson', async (event, filePath) => {
+        const fs = require('fs-extra');
+        try {
+            if (!(await fs.exists(filePath))) return null;
+            return await fs.readJson(filePath);
+        } catch (e) {
+            console.error('readJson error:', e);
+            return null;
+        }
+    });
+
     ipcMain.handle('listDirs', async (event, dir) => {
         const fs = require('fs-extra');
         try {
@@ -258,11 +269,13 @@ const createWindow = async () => {
             width: 648,
             height: 1152,
             show: false,
+            autoHideMenuBar: true,
             icon: path.join(__dirname, 'public/icon.png'),
             webPreferences: {
                 preload: path.join(__dirname, 'preload.js')
             }
-        })
+        });
+        mainWindow.setMenu(null);
 
         if (process.env.PROD_TEST === 'true' || app.isPackaged) {
             mainWindow.loadFile(path.join(__dirname, 'public/comicui/dist/index.html'))

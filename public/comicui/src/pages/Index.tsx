@@ -62,7 +62,8 @@ const Index = () => {
         const files = await getApi().listDir(dirPath);
         const comicFiles = files.filter(f => f.match(/\.(cbz|zip|epub)$/i));
         if (comicFiles.length > 0) {
-          comics.push({ title: dir, path: dirPath, files: comicFiles });
+          const mangaInfo = await getApi().readJson(dirPath + '/mangaInfo.json');
+          comics.push({ title: dir, path: dirPath, files: comicFiles, mangaInfo });
         }
       }
       setDownloadedComics(comics);
@@ -120,10 +121,17 @@ const Index = () => {
   useEffect(() => {
     const interval = setInterval(async () => {
       const taskList = await getApi().getTaskList();
-      setTasks(taskList);
+      setTasks(prevTasks => {
+        // If a task just completed, refresh the downloaded comics list
+        const recentlyCompleted = taskList.some(t => t.status === 'completed' && !prevTasks.find(pt => pt.title === t.title && pt.status === 'completed'));
+        if (recentlyCompleted) {
+          fetchDownloadedComics();
+        }
+        return taskList;
+      });
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchDownloadedComics]);
 
   useEffect(() => {
     sessionStorage.setItem('lastView', JSON.stringify(view));
@@ -171,7 +179,7 @@ const Index = () => {
     <div className="min-h-screen bg-background relative">
       <div className="ink-wash fixed inset-0 pointer-events-none z-0" />
 
-      <header className="relative z-10 border-b-[3px] border-foreground bg-background speed-lines h-16">
+      <header className="relative z-10 border-b-[3px] border-foreground bg-background h-16">
         <div className="container max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-foreground flex items-center justify-center border-2 border-foreground">
@@ -226,7 +234,7 @@ const Index = () => {
                     任务 ({tasks.length})
                   </button>
                 </div>
-                
+
                 <div className="flex-1 overflow-hidden">
                   {view.tab === 'search' || view.tab === 'downloaded' ? (
                     <ComicSearch
@@ -266,6 +274,7 @@ const Index = () => {
                 comic={view.comic}
                 onBack={() => setView({ type: "search", tab: "downloaded" })}
                 onRead={handleRead}
+                onSelectOnline={handleSelectManga}
               />
             )}
           </motion.div>

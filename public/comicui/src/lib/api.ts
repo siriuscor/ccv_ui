@@ -23,6 +23,7 @@ export interface DownloadedComic {
   cover?: string;
   path: string;
   files: string[];
+  mangaInfo?: MangaInfo;
 }
 
 export interface MangaInfo {
@@ -65,6 +66,7 @@ declare global {
       selectFolder: () => Promise<string | null>;
       listDir: (dir: string) => Promise<string[]>;
       listDirs: (dir: string) => Promise<string[]>;
+      readJson: (filePath: string) => Promise<any | null>;
       debugMode: (mode: boolean) => Promise<void>;
       getComicFiles: (filePath: string) => Promise<string[]>;
       getComicImage: (filePath: string, imageName: string) => Promise<string | null>;

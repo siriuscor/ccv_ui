@@ -220,6 +220,16 @@ class ChapterDownloader extends EventEmitter {
         let savePath = p.normalize(p.resolve(path, title));
         await fs.ensureDir(savePath);
 
+        let mangaInfoPath = p.resolve(path, 'mangaInfo.json');
+        try {
+            if (mangaInfo && !(await fs.exists(mangaInfoPath))) {
+                await fs.ensureDir(path);
+                const infoToSave = { ...mangaInfo };
+                delete infoToSave.chapters;
+                await fs.writeJson(mangaInfoPath, infoToSave, { spaces: 2 });
+            }
+        } catch(e) { console.error('save mangaInfo error', e); }
+
         let hasGoPageFunc = await page.evaluate(async () => {
             return __mantaku.goPage ? true : false;
         });

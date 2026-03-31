@@ -66,6 +66,9 @@ window.api = {
   async listDirs(dir) {
     return await ipcRenderer.invoke('listDirs', dir);
   },
+  async readJson(filePath) {
+    return await ipcRenderer.invoke('readJson', filePath);
+  },
   async debugMode(mode) {
     return await ipcRenderer.invoke('debugMode', mode);
   },

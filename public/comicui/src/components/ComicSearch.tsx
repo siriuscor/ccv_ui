@@ -85,17 +85,23 @@ export default function ComicSearch({
       className="bg-card p-3 text-left hover:bg-muted transition-colors cursor-pointer group border-b border-r border-border last:border-b-0"
     >
       <div className="flex gap-3">
-        <div className="w-16 h-22 shrink-0 flex items-center justify-center border-2 border-foreground bg-manga-success">
-          <FolderOpen className="w-8 h-8 text-primary-foreground" />
-        </div>
+        {comic.mangaInfo && comic.mangaInfo.cover ? (
+          <div className="w-16 h-22 shrink-0 flex items-center justify-center border-2 border-foreground bg-manga-success">
+            <img src={comic.mangaInfo.cover} alt={comic.title} className="w-full h-full object-cover" />
+          </div>
+        ) : (
+          <div className="w-16 h-22 shrink-0 flex items-center justify-center border-2 border-foreground bg-manga-success">
+            <FolderOpen className="w-8 h-8 text-primary-foreground" />
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <h3 className="font-serif text-lg leading-tight truncate group-hover:text-accent transition-colors">
-              {comic.title}
+              {comic.mangaInfo?.title || comic.title}
             </h3>
             <CheckCircle className="w-4 h-4 text-manga-success shrink-0" />
           </div>
-          <p className="text-sm text-muted-foreground">{comic.files.length} 个文件</p>
+          <p className="text-sm text-muted-foreground truncate">{comic.mangaInfo?.author || `${comic.files.length} 个文件`}</p>
         </div>
       </div>
     </motion.button>

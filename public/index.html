@@ -7,26 +7,31 @@
   <link rel="stylesheet" href="assets/zpix.css">
   <script src="assets/preact.js"></script>
   <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+    }
+
     .main {
-      display: grid;
-      grid-template-areas:
-        "search"
-        "recent"
-        "library";
-      grid-template-columns: 1fr;
-      grid-template-rows: auto auto auto;
-      gap: 20px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      box-sizing: border-box;
+      gap: 10px;
     }
 
     .search {
-      grid-area: search;
       display: grid;
       grid-template-areas:
         "searchbar actions"
         "sites ."
         "result result";
       grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto 1fr;
       gap: 10px;
+      flex: 1;
+      min-height: 0;
     }
 
     .recent {
@@ -194,7 +199,7 @@
       sortedHistory, updateHistory, deleteHistory,
       mangaInfo, setMangaInfo
     }}>
-      <div class="nes-container main" style="margin: 0px auto;/*max-width: 980px;*/">
+      <div class="nes-container main" style="margin: 0; height: 100vh; box-sizing: border-box; overflow: hidden; border-radius: 0; border: none;">
         <${Search} />
         <!--<${Recent} />-->
         <${HistoryDownload} />
@@ -283,9 +288,9 @@
   }
 
   function SearchResult(props) {
-    return html`<div class="search-result" style="grid-area: result;">
-      <h3># 搜索结果</h3>
-      ${props.list <= 0 ? html`没有搜索结果` : html`<${SimpleBookList} type="card" list=${props.list}/>`}
+    return html`<div class="search-result" style="grid-area: result; display: flex; flex-direction: column; min-height: 0;">
+      <h3 style="flex-shrink: 0;"># 搜索结果</h3>
+      ${props.list <= 0 ? html`<div style="flex: 1; overflow-y: auto;">没有搜索结果</div>` : html`<${SimpleBookList} type="card" list=${props.list}/>`}
     </div>`;
   }
 
@@ -310,9 +315,9 @@
         })
       };
     };
-    return html`<div class="">
-      <h3># 历史记录</h3>
-      <div style="display: flex;gap:5px;flex-direction: row;flex-wrap:wrap; max-height: 300px;overflow-x: hidden;overflow-y: auto;margin-bottom:10px;">
+    return html`<div style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+      <h3 style="flex-shrink: 0;"># 历史记录</h3>
+      <div style="display: flex;gap:5px;flex-direction: row;flex-wrap:wrap; flex: 1; min-height: 0; overflow-x: hidden;overflow-y: auto;margin-bottom:10px;">
       ${sortedHistory.length <= 0 ? html`暂无历史记录` : ''}
         <ul class="nes-list is-disc" style="padding-inline-start: 20px;">
         ${sortedHistory.map((book, i) => html`
@@ -371,10 +376,10 @@
       console.log('trigger set localStorage', tasks);
       localStorage.setItem('tasks', JSON.stringify(tasks));
     }, [tasks]);
-    return html`<div class="tasks">
-      <h3># 下载任务 (${tasks.length}) <a onClick=${() => api.cleanTask()}>清理</a></h3>
-      ${tasks.length <= 0 ? html`<p>暂无下载任务</p>` : html`
-        <div style="max-height: 200px;overflow-x: hidden;overflow-y: auto;" class="nes-table-responsive">
+    return html`<div class="tasks" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+      <h3 style="flex-shrink: 0;"># 下载任务 (${tasks.length}) <a onClick=${() => api.cleanTask()}>清理</a></h3>
+      ${tasks.length <= 0 ? html`<p style="flex: 1; min-height: 0; overflow-y: auto;">暂无下载任务</p>` : html`
+        <div style="flex: 1; min-height: 0; overflow-x: hidden;overflow-y: auto;" class="nes-table-responsive">
           <table class="nes-table is-bordered" style="width:100%;">
             <tbody>
           ${tasks.map((task, i) => html`<tr key=${task.url}>
@@ -420,7 +425,7 @@
       };
     };
     return html`
-      <div style="display: flex;gap: 5px;flex-direction: column;max-height: 120px;overflow: hidden;overflow-y: auto;">
+      <div style="display: flex;gap: 5px;flex-direction: column;flex: 1; min-height: 0; overflow-x: hidden;overflow-y: auto;">
         <ul class="nes-list is-disc" style="padding-inline-start: 20px;">
         ${props.list.map((book, i) => html`
             <li><a href="#" onclick=${openChapterDialog(book.url)}>
@@ -566,10 +571,10 @@
 
     return html`<div style="position: fixed;top: 0; left: 0;width: 100vw; height: 100vh;background: rgba(0, 0, 0, 0.5);display: flex;
   align-items: center;justify-content: center;z-index: 999;">
-      <div class="nes-dialog is-rounded" style="background: white;width: 80%; margin:auto;">
-      <p>${mangaInfo.title} - ${mangaInfo.author} (${mangaInfo.status})</p>
-      <p>${mangaInfo.intro}</p>
-      <p>下载到 ${mangaPath}, 文件类型 ${cacheInput.get('packType') || 'cbz'}</p>
+      <div class="nes-dialog is-rounded" style="background: white;width: 80%; margin:auto; max-height: 90vh; display: flex; flex-direction: column;">
+      <p style="flex-shrink: 0;">${mangaInfo.title} - ${mangaInfo.author} (${mangaInfo.status})</p>
+      <p style="flex-shrink: 0; max-height: 100px; overflow-y: auto;">${mangaInfo.intro}</p>
+      <p style="flex-shrink: 0;">下载到 ${mangaPath}, 文件类型 ${cacheInput.get('packType') || 'cbz'}</p>
       <!--
       <div class="nes-field is-inline" style="margin-bottom: 10px;gap:5px;">
         <label for="inline_field" style="text-align: left;margin-right:5px;">下载到</label>
@@ -583,8 +588,8 @@
         </div>
       </div>
       -->
-      <p class="title">选择章节 (${checkedItems.filter((i) => i).length}) <i>按住shift可以多选</i></p>
-      <div style="display: flex;gap:5px;flex-direction: row;flex-wrap:wrap; max-height: 300px;overflow-x: hidden;overflow-y: auto;margin-bottom:10px;user-select: none;-webkit-user-select: none;-moz-user-select: none;-ms-user-select: none;">
+      <p class="title" style="flex-shrink: 0;">选择章节 (${checkedItems.filter((i) => i).length}) <i>按住shift可以多选</i></p>
+      <div style="display: flex;gap:5px;flex-direction: row;flex-wrap:wrap; flex: 1; min-height: 0; overflow-x: hidden;overflow-y: auto;margin-bottom:10px;user-select: none;-webkit-user-select: none;-moz-user-select: none;-ms-user-select: none;">
       ${mangaInfo.chapters.map((chapter, i) => html`<label class="nes-pointer" style="margin-bottom: 0px;${downloadedChapters.includes(chapter.title) ? 'text-decoration: line-through;color: gray;' : ''}">
           <input type="checkbox" class="nes-checkbox" data-url=${chapter.url} 
             checked=${downloadedChapters.includes(chapter.title) || checkedItems[i]} onChange=${(e) => handleCheck(e, i)} disabled=${downloadedChapters.includes(chapter.title)}/>
@@ -592,7 +597,7 @@
         </label>
       `)}
       </div>
-      <div class="dialog-menu">
+      <div class="dialog-menu" style="flex-shrink: 0;">
         <button class="nes-btn" onClick=${close} style="margin-right: 10px; width:120px">取消</button>
         <button class="nes-btn ${checkedItems.filter((i) => i).length <= 0 ? 'is-disabled' : 'is-primary'}" onClick=${confirm} style="width:120px">确认</button>
       </div>

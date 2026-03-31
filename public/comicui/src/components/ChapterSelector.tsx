@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { type MangaInfo, getApi } from "@/lib/api";
 import { motion } from "framer-motion";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import MangaHeader from "./MangaHeader";
 
 type Props = {
   mangaUrl: string;
@@ -109,22 +110,10 @@ export default function ChapterSelector({ mangaUrl, onBack, onDownload, onRead, 
       </button>
 
       {/* Comic info panel */}
-      <div className="border-b-2 border-foreground pb-2 mb-2">
-        <div className="flex gap-4 items-start">
-          <div className="w-40 h-56 bg-primary shrink-0 flex items-center justify-center border-2 border-foreground">
-            {mangaInfo.cover ? (
-              <img src={mangaInfo.cover} alt={mangaInfo.title} className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-primary-foreground font-serif text-2xl font-bold">{mangaInfo.title[0]}</span>
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <h2 className="font-serif text-xl leading-tight truncate">{mangaInfo.title}</h2>
-            <p className="text-xs text-muted-foreground truncate">{mangaInfo.author} · {mangaInfo.status}</p>
-            <p className="text-xs text-secondary-foreground line-clamp-2">{mangaInfo.intro}</p>
-          </div>
-        </div>
-      </div>
+      <MangaHeader 
+        mangaInfo={mangaInfo}
+        title={mangaInfo.title}
+      />
 
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
