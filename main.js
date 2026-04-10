@@ -254,6 +254,7 @@ const createWindow = async () => {
         alwaysOnTop: true,
         resizable: false,
         show: false,
+        backgroundColor: '#00000000',
         icon: path.join(__dirname, 'public/icon.png'),
         webPreferences: {
             nodeIntegration: false,
@@ -262,7 +263,9 @@ const createWindow = async () => {
     })
 
     splashWindow.loadFile(path.join(__dirname, 'public/splash.html'))
-    splashWindow.show();
+    splashWindow.once('ready-to-show', () => {
+        splashWindow.show();
+    });
 
     setTimeout(() => {
         mainWindow = new BrowserWindow({

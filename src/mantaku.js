@@ -228,7 +228,7 @@ class ChapterDownloader extends EventEmitter {
                 delete infoToSave.chapters;
                 await fs.writeJson(mangaInfoPath, infoToSave, { spaces: 2 });
             }
-        } catch(e) { console.error('save mangaInfo error', e); }
+        } catch (e) { console.error('save mangaInfo error', e); }
 
         let hasGoPageFunc = await page.evaluate(async () => {
             return __mantaku.goPage ? true : false;
@@ -283,13 +283,33 @@ class ChapterDownloader extends EventEmitter {
             } else {
                 //debug(`save image ${url} -> ${savePath}`);
                 let padNum = i.toString().padStart(3, '0');
-                await fs.outputFile(`${savePath}/${padNum}.${fromCache.mimeType}`, await imageCache[image].buffer());
-
                 if (fromCache.mimeType === 'webp') {
-                    await utils.convertWebp(savePath, padNum);
-                }
-                if (fromCache.mimeType === 'png') { // compress it to jpg
-                    await utils.convertPng(savePath, padNum);
+                    try {
+                        const base64Data = await page.evaluate(async (url) => {
+                            try {
+                                const response = await fetch(url);
+                                const blob = await response.blob();
+                                const img = await createImageBitmap(blob);
+                                const canvas = document.createElement('canvas');
+                                canvas.width = img.width;
+                                canvas.height = img.height;
+                                canvas.getContext('2d').drawImage(img, 0, 0);
+                                return canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
+                            } catch (err) {
+                                throw new Error('Canvas conversion failed: ' + err.message);
+                            }
+                        }, image);
+                        await fs.outputFile(`${savePath}/${padNum}.jpg`, Buffer.from(base64Data, 'base64'));
+                        console.log(`[OK] Page ${padNum} converted to JPEG via browser`);
+                    } catch (e) {
+                        console.error(`[WARN] Page ${padNum} conversion failed, saving original webp:`, e.message);
+                        await fs.outputFile(`${savePath}/${padNum}.webp`, await fromCache.buffer());
+                    }
+                } else {
+                    await fs.outputFile(`${savePath}/${padNum}.${fromCache.mimeType}`, await fromCache.buffer());
+                    if (fromCache.mimeType === 'png') {
+                        await utils.convertPng(savePath, padNum);
+                    }
                 }
             }
 

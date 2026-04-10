@@ -5,7 +5,7 @@ const rimraf = require('rimraf');
 const rmdir = require('util').promisify(rimraf);
 
 async function pack(dir, to, type, mangaInfo) {
-    switch(type) {
+    switch (type) {
         case 'epub':
             await toEpub(dir, to + '.epub', mangaInfo);
             break;
@@ -56,7 +56,7 @@ async function toEpub(dir, to, mangaInfo) {
         if (mangaInfo.author) option.author = mangaInfo.author;
         if (mangaInfo.intro) option.description = mangaInfo.intro;
     }
-    const {EPub} = await import("@lesjoursfr/html-to-epub");
+    const { EPub } = await import("@lesjoursfr/html-to-epub");
     let epub = new EPub(option, to);
     await epub.render();
 }
@@ -81,11 +81,11 @@ async function generateXML(data) {
 async function compress(dir, zipName, mangaInfo) {
     let list = await fs.readdir(dir);
     var zip = new JSZip();
-    for(let i = 0; i < list.length; i++) {
+    for (let i = 0; i < list.length; i++) {
         let item = list[i];
-        zip.file(item, fs.readFile(path.resolve(dir, item)), {binary: true});
+        zip.file(item, fs.readFile(path.resolve(dir, item)), { binary: true });
     }
-    let addition = {series: path.parse(zipName).name};
+    let addition = { series: path.parse(zipName).name };
     let juanMatch = zipName.match(/第?\s*([\d\.]+)\s*卷/);
     if (juanMatch) {
         addition.volume = parseFloat(juanMatch[1]);
@@ -94,8 +94,8 @@ async function compress(dir, zipName, mangaInfo) {
     if (huiMatch) {
         addition.number = parseFloat(huiMatch[1]);
     }
-    zip.file('ComicInfo.xml', generateXML({...(mangaInfo || {}), ...addition}), {binary: false});
-    let content = await zip.generateAsync({type:"nodebuffer"});
+    zip.file('ComicInfo.xml', generateXML({ ...(mangaInfo || {}), ...addition }), { binary: false });
+    let content = await zip.generateAsync({ type: "nodebuffer" });
     await fs.outputFile(zipName, content);
 }
 
@@ -131,10 +131,11 @@ function getDefaultBasePath() {
 function twirlTimer(str) {
     const icon = ['⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
     var x = 0;
-    return setInterval(function() {
-      process.stdout.write("\r" + icon[x++] + str);
-      x %= icon.length;
-    }, 200);}
+    return setInterval(function () {
+        process.stdout.write("\r" + icon[x++] + str);
+        x %= icon.length;
+    }, 200);
+}
 let loading = null;
 function startLoading() {
     loading = twirlTimer(' 读取中...');
@@ -147,19 +148,6 @@ function stopLoading() {
 
 // const webp = require('webp-converter');
 // const {Jimp} = require('jimp');
-const dwebp = require('./dwebp.js');
-
-async function convertWebp(savePath, i) {
-    let name = path.resolve(savePath, i);
-    await dwebp(`${name}.webp`, `${name}.jpg`, "-o");
-    // let image = await Jimp.read(`${name}.jpg`);
-    // await image.write(`${name}.jpg`, {quality: 70});
-    // await sharp(name + '.webp')
-    //     .jpeg({ quality: 70})
-    //     .toFile(name + '.jpg');
-    await fs.unlink(`${name}.webp`);
-}
-
 async function convertPng(savePath, i) {
     // let name = `${savePath}/${i}`;
     // await sharp(name + '.png')
@@ -189,18 +177,18 @@ function parallel(dataArray, concurrent, processFunc) {
             if (index >= dataArray.length) {
                 return;
             }
-            active ++;
+            active++;
             let current = index++;
             processFunc(dataArray[current], current).then(() => {
             }).catch(e => {
                 console.error('should handle error in process function', e);
             }).finally(() => {
                 next();
-                active --;
-                if (active === 0)  return resolve();
+                active--;
+                if (active === 0) return resolve();
             });
         }
-        for(let i=0;i<concurrent;i++) {
+        for (let i = 0; i < concurrent; i++) {
             next();
         }
     });
@@ -209,10 +197,11 @@ function parallel(dataArray, concurrent, processFunc) {
 module.exports = {
     readVersion,
     compress, rmdir, pack,
-    sleep, retry, 
+    sleep, retry,
     getDefaultChromePath, getDefaultBasePath,
     startLoading, stopLoading,
-    convertWebp, convertPng,
+    // convertWebp, 
+    convertPng,
     parallel,
 }
 

@@ -45,7 +45,8 @@
       "preload.js",
       "src/**/*",
       "public/comicui/dist/**/*",
-      "public/icon.png",
+      "public/*.png",
+      "public/*.html",
       "package.json",
       "node_modules/**/*"
     ],
