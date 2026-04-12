@@ -63,7 +63,7 @@ export default function ComicSearch({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="font-serif text-lg leading-tight truncate group-hover:text-accent transition-colors">
+            <h3 className="font-serif text-lg leading-tight truncate group-hover:text-accent transition-colors" title={result.title}>
               {result.title}
             </h3>
             {isDownloaded && <CheckCircle className="w-4 h-4 text-manga-success shrink-0" />}
@@ -96,7 +96,7 @@ export default function ComicSearch({
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="font-serif text-lg leading-tight truncate group-hover:text-accent transition-colors">
+            <h3 className="font-serif text-lg leading-tight truncate group-hover:text-accent transition-colors" title={comic.mangaInfo?.title || comic.title}>
               {comic.mangaInfo?.title || comic.title}
             </h3>
             <CheckCircle className="w-4 h-4 text-manga-success shrink-0" />

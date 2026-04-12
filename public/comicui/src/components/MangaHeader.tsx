@@ -44,7 +44,7 @@ export default function MangaHeader({ mangaInfo, title, fallbackIcon, extra }: M
           </div>
           
           {mangaInfo?.intro && (
-            <ScrollArea className="flex-1 min-h-[60px] text-xs text-muted-foreground font-serif italic border-l-[3px] border-foreground/20 pl-4 py-1 leading-relaxed">
+            <ScrollArea className="flex-1 min-h-[60px] text-base text-muted-foreground font-serif italic border-l-[3px] border-foreground/20 pl-4 py-1 leading-relaxed">
               {mangaInfo.intro}
             </ScrollArea>
           )}

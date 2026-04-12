@@ -44,8 +44,8 @@ export default function DownloadQueue({ items, onPause, onResume, onRemove, onCl
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between p-4 border-b-[3px] border-foreground speed-lines-h">
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-between p-4 border-b-[3px] border-foreground speed-lines-h shrink-0">
         <h3 className="manga-header text-lg">
           下载列表 ({completed}/{total})
         </h3>
@@ -53,7 +53,7 @@ export default function DownloadQueue({ items, onPause, onResume, onRemove, onCl
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
-      <ScrollArea className="h-[300px]">
+      <ScrollArea className="h-full flex-1">
         <AnimatePresence mode="popLayout">
           {items.map((item, idx) => (
             <motion.div

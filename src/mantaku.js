@@ -226,6 +226,18 @@ class ChapterDownloader extends EventEmitter {
                 await fs.ensureDir(path);
                 const infoToSave = { ...mangaInfo };
                 delete infoToSave.chapters;
+                // Convert cover image to base64
+                if (infoToSave.cover && infoToSave.cover.startsWith('http')) {
+                    try {
+                        const response = await page.goto(infoToSave.cover, { timeout: 10000 });
+                        const buffer = await response.buffer();
+                        const base64 = buffer.toString('base64');
+                        const mimeType = response.headers()['content-type'] || 'image/jpeg';
+                        infoToSave.cover = `data:${mimeType};base64,${base64}`;
+                    } catch (e) {
+                        console.error('Failed to convert cover to base64:', e.message);
+                    }
+                }
                 await fs.writeJson(mangaInfoPath, infoToSave, { spaces: 2 });
             }
         } catch (e) { console.error('save mangaInfo error', e); }
