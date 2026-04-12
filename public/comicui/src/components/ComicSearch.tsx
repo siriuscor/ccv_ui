@@ -48,28 +48,22 @@ export default function ComicSearch({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2 }}
       onClick={() => onSelect(result.url, result)}
-      className="bg-card p-3 text-left hover:bg-muted transition-colors cursor-pointer group border-b border-r border-border"
+      className="bg-card p-2 text-left hover:bg-muted transition-colors cursor-pointer group border-b border-r border-border flex flex-col"
     >
-      <div className="flex gap-3">
-        <div className={`w-16 h-22 shrink-0 flex items-center justify-center border-2 border-foreground ${isDownloaded ? "bg-manga-success" : "bg-primary"
-          }`}>
-          {result.cover ? (
-            <img src={result.cover} alt={result.title} className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-primary-foreground font-serif text-2xl font-bold">
-              {result.title[0]}
-            </span>
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="font-serif text-lg leading-tight truncate group-hover:text-accent transition-colors" title={result.title}>
-              {result.title}
-            </h3>
-            {isDownloaded && <CheckCircle className="w-4 h-4 text-manga-success shrink-0" />}
-          </div>
-          <p className="text-sm text-muted-foreground">{result.author || '未知作者'}</p>
-        </div>
+      <div className={`w-full aspect-[3/4] shrink-0 flex items-center justify-center border-2 border-foreground bg-primary overflow-hidden`}>
+        {result.cover ? (
+          <img src={result.cover} alt={result.title} className="w-full h-full object-cover" />
+        ) : (
+          <span className="text-primary-foreground font-serif text-4xl font-bold">
+            {result.title[0]}
+          </span>
+        )}
+      </div>
+      <div className="min-w-0 flex-1 pt-2">
+        <h3 className="font-serif text-sm leading-tight truncate group-hover:text-accent transition-colors" title={result.title}>
+          {result.title}
+        </h3>
+        <p className="text-xs text-muted-foreground truncate">{result.author || '未知作者'}</p>
       </div>
     </motion.button>
   );
@@ -82,27 +76,20 @@ export default function ComicSearch({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2 }}
       onClick={() => onSelectDownloaded(comic)}
-      className="bg-card p-3 text-left hover:bg-muted transition-colors cursor-pointer group border-b border-r border-border last:border-b-0"
+      className="bg-card p-2 text-left hover:bg-muted transition-colors cursor-pointer group border-b border-r border-border last:border-b-0 flex flex-col"
     >
-      <div className="flex gap-3">
+      <div className={`w-full aspect-[3/4] shrink-0 flex items-center justify-center border-2 border-foreground bg-manga-success overflow-hidden`}>
         {comic.mangaInfo && comic.mangaInfo.cover ? (
-          <div className="w-16 h-22 shrink-0 flex items-center justify-center border-2 border-foreground bg-manga-success">
-            <img src={comic.mangaInfo.cover} alt={comic.title} className="w-full h-full object-cover" />
-          </div>
+          <img src={comic.mangaInfo.cover} alt={comic.title} className="w-full h-full object-cover" />
         ) : (
-          <div className="w-16 h-22 shrink-0 flex items-center justify-center border-2 border-foreground bg-manga-success">
-            <FolderOpen className="w-8 h-8 text-primary-foreground" />
-          </div>
+          <FolderOpen className="w-8 h-8 text-primary-foreground" />
         )}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="font-serif text-lg leading-tight truncate group-hover:text-accent transition-colors" title={comic.mangaInfo?.title || comic.title}>
-              {comic.mangaInfo?.title || comic.title}
-            </h3>
-            <CheckCircle className="w-4 h-4 text-manga-success shrink-0" />
-          </div>
-          <p className="text-sm text-muted-foreground truncate">{comic.mangaInfo?.author || `${comic.files.length} 个文件`}</p>
-        </div>
+      </div>
+      <div className="min-w-0 flex-1 pt-2">
+        <h3 className="font-serif text-sm leading-tight truncate group-hover:text-accent transition-colors" title={comic.mangaInfo?.title || comic.title}>
+          {comic.mangaInfo?.title || comic.title}
+        </h3>
+        <p className="text-xs text-muted-foreground truncate">{comic.mangaInfo?.author || `${comic.files.length} 个文件`}</p>
       </div>
     </motion.button>
   );
@@ -154,7 +141,7 @@ export default function ComicSearch({
       {/* Results List */}
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
-          <div className="grid grid-cols-2 manga-frame-section">
+          <div className="grid grid-cols-4 manga-frame-section">
             {activeTab === "search" ? (
               searchResults.length > 0 ? (
                 searchResults.map(result => renderComic(result, downloadedComics.some(d => d.title === result.title)))
