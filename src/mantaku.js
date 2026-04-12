@@ -103,10 +103,10 @@ class SiteManager {
     }
 
     static async injectSiteScript(page) {
-        await page.evaluate(await fs.readFile(this.scriptPath + 'common.js', 'utf8'));
+        await page.addScriptTag({ content: await fs.readFile(this.scriptPath + 'common.js', 'utf8') });
         let site = this.detect(page.url());
         if (!site) throw Error('No injector found for ' + page.url());
-        await page.evaluate(await fs.readFile(site.path, 'utf8'));
+        await page.addScriptTag({ content: await fs.readFile(site.path, 'utf8') });
     }
 
     static async search(page, siteName, keyword) {

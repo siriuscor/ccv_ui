@@ -95,7 +95,7 @@ export default function ComicSearch({
   );
 
   return (
-    <div className="flex-1 flex flex-col min-h-0">
+    <div className="flex-1 flex flex-col min-h-0 max-h-full">
       {/* Search Header - Only visible in search tab */}
       {activeTab === "search" && (
         <div className="border-b-[3px] border-foreground pb-2 mb-4">
@@ -139,14 +139,14 @@ export default function ComicSearch({
       )}
 
       {/* Results List */}
-      <div className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full">
-          <div className="grid grid-cols-4 manga-frame-section">
+      <div className="flex-1 overflow-y-auto border-2 border-foreground">
+        <div className="h-full overflow-y-auto">
+          <div className="grid grid-cols-4">
             {activeTab === "search" ? (
               searchResults.length > 0 ? (
                 searchResults.map(result => renderComic(result, downloadedComics.some(d => d.title === result.title)))
               ) : (
-                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground screentone col-span-2">
+                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground screentone col-span-4">
                   <Search className="w-12 h-12 mb-4 opacity-10" />
                   <p className="font-serif italic font-bold">待机中...</p>
                 </div>
@@ -155,14 +155,14 @@ export default function ComicSearch({
               downloadedComics.length > 0 ? (
                 downloadedComics.map(renderDownloadedComic)
               ) : (
-                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground screentone">
+                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground screentone col-span-4">
                   <FolderOpen className="w-12 h-12 mb-4 opacity-10" />
                   <p className="font-serif italic font-bold">暂无存档</p>
                 </div>
               )
             )}
           </div>
-        </ScrollArea>
+        </div>
       </div>
     </div>
   );

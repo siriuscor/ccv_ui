@@ -351,7 +351,7 @@ const createWindow = async () => {
         mainWindow.on('close', () => {
             app.quit();
         });
-    }, 4000);
+    }, 2000);
 }
 // createWindow()
 // app.whenReady().then(() => {
