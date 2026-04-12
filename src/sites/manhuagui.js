@@ -30,6 +30,7 @@ __mantaku = Object.assign(__mantaku, {
             return {
                 title: li.querySelector('.book-detail dt a').text,
                 url: li.querySelector('.book-cover a').href,
+                cover: li.querySelector('.book-cover img') ? li.querySelector('.book-cover img').src : '',
                 intro: li.querySelector('.book-detail .intro').innerText,
                 author: li.querySelectorAll('.book-detail dd')[2].innerText
             };

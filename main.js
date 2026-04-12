@@ -17,11 +17,11 @@ const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (
 app.commandLine.appendSwitch('ignore-certificate-errors');
 
 
-async function newPage() {
+async function newPage(skipAdblock = false) {
     const window = new BrowserWindow({
         x: windowIndex * 400, y: 0,
-        // x: mainWindow.getBounds().x + mainWindow.getBounds().width + windowIndex * 100, 
-        // y: mainWindow.getBounds().y, 
+        // x: mainWindow.getBounds().x + mainWindow.getBounds().width + windowIndex * 100,
+        // y: mainWindow.getBounds().y,
         width: 400, height: 300, show: debug,
         title: `Downloader ${windowIndex + 1}`
     });
@@ -29,16 +29,72 @@ async function newPage() {
     window.webContents.setZoomFactor(0.5);
     const page = await pie.getPage(browser, window);
     await page.setUserAgent(UA);
-    mantaku.blocker.enableBlockingInPage(page);
+    if (!skipAdblock) {
+        mantaku.blocker.enableBlockingInPage(page);
+    }
+    // Set extra headers for sites that need them (manhuagui)
+    await page.setExtraHTTPHeaders({
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Cache-Control': 'max-age=0'
+    });
     downloadWindow.push(window);
     return page;
 }
 
-async function browseOnce(fn) {
+// Sites that have issues with adblocking
+const ADBLOCK_SKIP_SITES = ['manhuagui'];
+const EXTRA_HEADERS_SITES = ['manhuagui'];
+
+function shouldSkipAdblock(url, site) {
+    if (site && ADBLOCK_SKIP_SITES.includes(site)) return true;
+    if (url) {
+        for (const skipSite of ADBLOCK_SKIP_SITES) {
+            if (url.includes(skipSite)) return true;
+        }
+    }
+    return false;
+}
+
+function needExtraHeaders(urlOrSite) {
+    // urlOrSite can be a URL or a site ID
+    if (urlOrSite && EXTRA_HEADERS_SITES.includes(urlOrSite)) return true;
+    if (urlOrSite && typeof urlOrSite === 'string' && urlOrSite.includes('://')) {
+        for (const skipSite of EXTRA_HEADERS_SITES) {
+            if (urlOrSite.includes(skipSite)) return true;
+        }
+    }
+    return false;
+}
+
+async function browseOnce(fn, skipAdblock = false, urlOrSite = null) {
     const window = new BrowserWindow({ width: 400, height: 300, show: debug });
     const page = await pie.getPage(browser, window);
-    mantaku.blocker.enableBlockingInPage(page);
+    if (!skipAdblock) {
+        mantaku.blocker.enableBlockingInPage(page);
+    }
     await page.setUserAgent(UA);
+    if (urlOrSite && needExtraHeaders(urlOrSite)) {
+        await page.setExtraHTTPHeaders({
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Cache-Control': 'max-age=0'
+        });
+    }
     let result = await fn(page);
     if (!debug) window.destroy();
     return result;
@@ -52,7 +108,7 @@ async function init() {
     ipcMain.handle('search', async (event, site, keyword) => {
         return await browseOnce((page) => {
             return mantaku.search(page, site, keyword);
-        });
+        }, shouldSkipAdblock(null, site), site);
     });
 
     ipcMain.handle('getSites', async (event) => {
@@ -66,7 +122,7 @@ async function init() {
     ipcMain.handle('getMangaInfo', async (event, url) => {
         return await browseOnce((page) => {
             return mantaku.getMangaInfo(page, url);
-        });
+        }, shouldSkipAdblock(url, null), url);
     });
 
     ipcMain.handle('getTaskList', async (event) => {

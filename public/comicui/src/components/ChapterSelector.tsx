@@ -41,13 +41,18 @@ export default function ChapterSelector({ mangaUrl, onBack, onDownload, onRead, 
   }, [mangaUrl, downloadPath]);
 
   const computeWeight = (title: string) => {
-    let weight = 0;
-    const juanMatch = title.match(/第?\s*([\d.]+)\s*卷/);
-    if (juanMatch) weight = parseFloat(juanMatch[1]) + 1;
-    const huiMatch = title.match(/第?\s*([\d.]+)\s*[回话話]/);
-    if (huiMatch) weight = parseFloat(huiMatch[1]) * 1000;
-    if (!juanMatch && !huiMatch) weight = 10000000;
-    return weight;
+    // 第n卷 -> weight: 0-9999
+    const juanMatch = title.match(/第\s*([\d.]+)\s*卷/);
+    if (juanMatch) {
+      return parseFloat(juanMatch[1]);
+    }
+    // 第n回/第n话 -> weight: 10000-19999
+    const huiMatch = title.match(/第\s*([\d.]+)\s*[回話话]/);
+    if (huiMatch) {
+      return 10000 + parseFloat(huiMatch[1]);
+    }
+    // 无法识别的 -> 排在最后
+    return 100000;
   };
 
   const sortedChapters = useMemo(() => {

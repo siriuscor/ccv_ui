@@ -15,6 +15,7 @@ __mantaku = Object.assign(__mantaku, {
             return {
                 title: i.querySelector('span.left').innerText,
                 url: i.href,
+                cover: i.querySelector('img') ? i.querySelector('img').src : '',
                 intro: i.querySelector('span:nth-child(2)').innerText,
                 author: '',
             };

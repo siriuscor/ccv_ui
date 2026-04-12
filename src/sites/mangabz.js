@@ -28,7 +28,7 @@ __mantaku = Object.assign(__mantaku, {
             return {
                 title: li.querySelector('.title').innerText,
                 url: li.querySelector('a').href,
-                // intro: li.querySelector('.comic-book-text p').innerText,
+                cover: li.querySelector('img') ? li.querySelector('img').src : '',
             }
         });
     },

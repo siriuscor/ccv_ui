@@ -33,6 +33,7 @@ __mantaku = Object.assign(__mantaku, {
             return {
                 title: li.querySelector('.exemptComicItem-txt p').innerText,
                 url: li.querySelector('.exemptComic_Item a').href,
+                cover: li.querySelector('img') ? li.querySelector('img').src : '',
                 intro: '',
                 author: li.querySelector('.exemptComicItem-txt-span').innerText
             };
