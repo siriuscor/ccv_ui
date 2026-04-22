@@ -48,22 +48,27 @@ export default function ComicSearch({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2 }}
       onClick={() => onSelect(result.url, result)}
-      className="bg-card p-2 text-left hover:bg-muted transition-colors cursor-pointer group border-b border-r border-border flex flex-col"
+      className="bg-white p-3 text-left transition-all cursor-pointer group border-[3px] border-foreground rounded-2xl shadow-comic hover:-translate-y-1 hover:-translate-x-1 hover:shadow-comic-md hover:scale-[1.02] active:translate-y-0 active:translate-x-0 active:shadow-none flex flex-col relative overflow-hidden"
     >
-      <div className={`w-full aspect-[3/4] shrink-0 flex items-center justify-center border-2 border-foreground bg-primary overflow-hidden`}>
+      <div className={`w-full aspect-[3/4] shrink-0 flex items-center justify-center border-[3px] border-foreground rounded-xl bg-manga-gold/20 overflow-hidden relative transition-transform`}>
         {result.cover ? (
           <img src={result.cover} alt={result.title} className="w-full h-full object-cover" />
         ) : (
-          <span className="text-primary-foreground font-serif text-4xl font-bold">
+          <span className="text-foreground font-serif text-5xl font-black italic opacity-50">
             {result.title[0]}
           </span>
         )}
+        {isDownloaded && (
+          <div className="absolute top-2 right-2 bg-manga-success text-white px-2 py-1 rounded-lg border-2 border-foreground font-black text-xs rotate-[-5deg] shadow-sm">
+            已下载
+          </div>
+        )}
       </div>
-      <div className="min-w-0 flex-1 pt-2">
-        <h3 className="font-serif text-sm leading-tight truncate group-hover:text-accent transition-colors" title={result.title}>
+      <div className="min-w-0 flex-1 pt-3">
+        <h3 className="font-serif text-base font-black leading-tight truncate group-hover:text-manga-red transition-colors" title={result.title}>
           {result.title}
         </h3>
-        <p className="text-xs text-muted-foreground truncate">{result.author || '未知作者'}</p>
+        <p className="text-sm font-bold text-muted-foreground truncate mt-1">{result.author || '未知作者'}</p>
       </div>
     </motion.button>
   );
@@ -76,20 +81,26 @@ export default function ComicSearch({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2 }}
       onClick={() => onSelectDownloaded(comic)}
-      className="bg-card p-2 text-left hover:bg-muted transition-colors cursor-pointer group border-b border-r border-border last:border-b-0 flex flex-col"
+      className="bg-white p-3 text-left transition-all cursor-pointer group border-[3px] border-foreground rounded-xl shadow-comic hover:-translate-y-1 hover:-translate-x-1 hover:shadow-comic-md hover:scale-[1.02] active:translate-y-0 active:translate-x-0 active:shadow-none flex flex-col"
     >
-      <div className={`w-full aspect-[3/4] shrink-0 flex items-center justify-center border-2 border-foreground bg-manga-success overflow-hidden`}>
+      <div className={`w-full aspect-[3/4] shrink-0 flex items-center justify-center border-[3px] border-foreground rounded-lg bg-manga-success/20 overflow-hidden relative transition-transform`}>
         {comic.mangaInfo && comic.mangaInfo.cover ? (
-          <img src={comic.mangaInfo.cover} alt={comic.title} className="w-full h-full object-cover" />
+          <>
+            <img src={comic.mangaInfo.cover} alt={comic.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100" />
+            <div className="absolute inset-0 border-[3px] border-foreground rounded-lg pointer-events-none" />
+          </>
         ) : (
-          <FolderOpen className="w-8 h-8 text-primary-foreground" />
+          <FolderOpen className="w-12 h-12 text-foreground opacity-50" />
         )}
+        <div className="absolute bottom-2 right-2 bg-white text-foreground px-2 py-1 rounded-lg border-2 border-foreground font-black text-xs rotate-[3deg] shadow-sm">
+          {comic.files.length} 卷
+        </div>
       </div>
-      <div className="min-w-0 flex-1 pt-2">
-        <h3 className="font-serif text-sm leading-tight truncate group-hover:text-accent transition-colors" title={comic.mangaInfo?.title || comic.title}>
+      <div className="min-w-0 flex-1 pt-3">
+        <h3 className="font-serif text-base font-black leading-tight truncate group-hover:text-manga-success transition-colors" title={comic.mangaInfo?.title || comic.title}>
           {comic.mangaInfo?.title || comic.title}
         </h3>
-        <p className="text-xs text-muted-foreground truncate">{comic.mangaInfo?.author || `${comic.files.length} 个文件`}</p>
+        <p className="text-sm font-bold text-muted-foreground truncate mt-1">{comic.mangaInfo?.author || `本地缓存`}</p>
       </div>
     </motion.button>
   );
@@ -98,25 +109,25 @@ export default function ComicSearch({
     <div className="flex-1 flex flex-col min-h-0 max-h-full">
       {/* Search Header - Only visible in search tab */}
       {activeTab === "search" && (
-        <div className="border-b-[3px] border-foreground pb-2 mb-4">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 flex-1">
-              <Search className="w-5 h-5 text-foreground shrink-0" />
+        <div className="relative mb-6">
+          <div className="flex items-center gap-2 bg-white border-[3px] border-foreground rounded-2xl p-2 shadow-comic">
+            <div className="flex items-center gap-2 flex-1 pl-2">
+              <Search className="w-6 h-6 text-foreground shrink-0" />
               <Input
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                placeholder="搜索资源..."
-                className="border-0 bg-transparent text-lg font-black italic focus-visible:ring-0 placeholder:text-muted-foreground px-0"
+                placeholder="搜索漫画资源..."
+                className="border-0 bg-transparent text-xl font-black italic focus-visible:ring-0 placeholder:text-muted-foreground px-2 h-12"
               />
-              {loading && <Loader2 className="w-5 h-5 animate-spin text-muted-foreground mr-2" />}
+              {loading && <Loader2 className="w-6 h-6 animate-spin text-manga-red mr-2" />}
             </div>
 
-            <div className="flex items-center gap-2 pr-1 border-l-[3px] border-foreground/20 pl-4">
+            <div className="flex items-center gap-2 pr-2 border-l-[3px] border-foreground pl-4 h-8">
               <select
                 value={selectedSite}
                 onChange={e => onSiteChange(e.target.value)}
-                className="bg-transparent text-sm font-black italic cursor-pointer text-foreground hover:text-accent focus-visible:outline-none focus:outline-none appearance-none"
+                className="bg-transparent text-base font-black italic cursor-pointer text-foreground hover:text-manga-red focus-visible:outline-none focus:outline-none appearance-none"
               >
                 {sites.map(site => {
                   const status = siteStatuses[site.id];
@@ -139,25 +150,34 @@ export default function ComicSearch({
       )}
 
       {/* Results List */}
-      <div className="flex-1 overflow-y-auto border-2 border-foreground">
+      <div className="flex-1 overflow-y-auto pr-2 pb-4">
         <div className="h-full overflow-y-auto">
-          <div className="grid grid-cols-4">
+          <div className="grid grid-cols-3 gap-6 p-2">
             {activeTab === "search" ? (
               searchResults.length > 0 ? (
                 searchResults.map(result => renderComic(result, downloadedComics.some(d => d.title === result.title)))
               ) : (
-                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground screentone col-span-4">
-                  <Search className="w-12 h-12 mb-4 opacity-10" />
-                  <p className="font-serif italic font-bold">待机中...</p>
+                <div className="flex flex-col items-center justify-center py-20 col-span-2 lg:col-span-4 bg-white border-[3px] border-foreground rounded-2xl shadow-comic">
+                  <div className="relative mb-6">
+                    <Search className="w-16 h-16 opacity-20" />
+                    <div className="absolute -top-4 -right-8 bg-manga-gold text-foreground border-[3px] border-foreground px-3 py-1 rounded-xl shadow-sm rotate-12 font-black italic text-lg z-10">
+                      Zzz...
+                    </div>
+                  </div>
+                  <p className="font-serif italic font-black text-2xl">待机中...</p>
+                  <p className="text-muted-foreground font-bold mt-2">输入你想看的漫画</p>
                 </div>
               )
             ) : (
               downloadedComics.length > 0 ? (
                 downloadedComics.map(renderDownloadedComic)
               ) : (
-                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground screentone col-span-4">
-                  <FolderOpen className="w-12 h-12 mb-4 opacity-10" />
-                  <p className="font-serif italic font-bold">暂无存档</p>
+                <div className="flex flex-col items-center justify-center py-20 col-span-2 lg:col-span-4 bg-white border-[3px] border-foreground rounded-2xl shadow-comic">
+                  <div className="relative mb-6">
+                    <FolderOpen className="w-16 h-16 opacity-20" />
+                  </div>
+                  <p className="font-serif italic font-black text-2xl">空空如也</p>
+                  <p className="text-muted-foreground font-bold mt-2">去搜索下载一些漫画吧！</p>
                 </div>
               )
             )}

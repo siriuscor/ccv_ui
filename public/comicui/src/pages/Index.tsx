@@ -206,23 +206,26 @@ const Index = () => {
     <div className="min-h-screen bg-background relative">
       <div className="ink-wash fixed inset-0 pointer-events-none z-0" />
 
-      <header className="relative z-10 border-b-[3px] border-foreground bg-background h-16">
-        <div className="container max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src="../../icon.png" alt="logo" className="w-10 h-10 object-contain" />
-            <h1 className="manga-header text-3xl tracking-wide">Manmori</h1>
+      <header className="relative z-30 bg-background h-16">
+        {/* Decorative underline layer */}
+        <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-foreground z-0" />
+        
+        <div className="relative z-10 container max-w-6xl mx-auto px-4 h-full flex items-center justify-between">
+          <div className="flex items-center gap-3 bg-manga-gold/20 px-4 py-2 rounded-xl border-4 border-foreground shadow-comic rotate-[-2deg] transition-transform hover:rotate-[-1deg]">
+            <img src="../../icon.png" alt="logo" className="w-10 h-10 object-contain drop-shadow-md" />
+            <h1 className="manga-header text-4xl tracking-wider text-manga-ink drop-shadow-[2px_2px_0px_#fff]">Manmori</h1>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground font-bold">
+            <div className="flex items-center gap-2 text-sm text-foreground font-black bg-white px-3 py-1.5 border-[3px] border-foreground shadow-comic rounded-lg">
               <Download className="w-4 h-4" />
               {completedCount}/{tasks.length} 完成
             </div>
             <button
               onClick={() => setShowSettings(true)}
-              className="p-2 hover:bg-muted rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="p-2 bg-manga-success/20 hover:bg-manga-success text-foreground border-[3px] border-foreground rounded-lg shadow-comic transition-all hover:-translate-y-1 hover:-translate-x-1 hover:shadow-comic-md active:translate-y-0.5 active:translate-x-0.5 active:shadow-none"
               aria-label="设置"
             >
-              <Settings className="w-5 h-5" />
+              <Settings className="w-6 h-6" />
             </button>
           </div>
         </div>
@@ -239,22 +242,22 @@ const Index = () => {
           >
             {view.type === "search" ? (
               <>
-                <div className="flex border-b-[3px] border-foreground mb-4">
+                <div className="flex gap-3 mb-6 px-1">
                   <button
                     onClick={() => setView({ type: "search", tab: "search" })}
-                    className={`flex-1 py-2 font-black italic tracking-tighter ${view.tab === 'search' ? 'bg-foreground text-background' : 'hover:bg-muted'}`}
+                    className={`flex-1 py-3 px-2 font-black italic tracking-wide text-lg border-[3px] border-foreground rounded-xl transition-all ${view.tab === 'search' ? 'bg-manga-gold text-foreground shadow-comic-md -translate-y-1' : 'bg-card text-muted-foreground shadow-comic hover:-translate-y-0.5 hover:shadow-comic-md hover:bg-white'}`}
                   >
                     搜索
                   </button>
                   <button
                     onClick={() => setView({ type: "search", tab: "downloaded" })}
-                    className={`flex-1 py-2 font-black italic tracking-tighter border-l-[3px] border-foreground ${view.tab === 'downloaded' ? 'bg-foreground text-background' : 'hover:bg-muted'}`}
+                    className={`flex-1 py-3 px-2 font-black italic tracking-wide text-lg border-[3px] border-foreground rounded-xl transition-all ${view.tab === 'downloaded' ? 'bg-manga-success text-white shadow-comic-md -translate-y-1' : 'bg-card text-muted-foreground shadow-comic hover:-translate-y-0.5 hover:shadow-comic-md hover:bg-white'}`}
                   >
                     已下载
                   </button>
                   <button
                     onClick={() => setView({ type: "search", tab: "queue" })}
-                    className={`flex-1 py-2 font-black italic tracking-tighter border-l-[3px] border-foreground ${view.tab === 'queue' ? 'bg-foreground text-background' : 'hover:bg-muted'}`}
+                    className={`flex-1 py-3 px-2 font-black italic tracking-wide text-lg border-[3px] border-foreground rounded-xl transition-all ${view.tab === 'queue' ? 'bg-manga-red text-white shadow-comic-md -translate-y-1' : 'bg-card text-muted-foreground shadow-comic hover:-translate-y-0.5 hover:shadow-comic-md hover:bg-white'}`}
                   >
                     任务 ({tasks.length})
                   </button>

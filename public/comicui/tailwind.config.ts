@@ -102,6 +102,11 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-download": "pulse-download 1.5s ease-in-out infinite",
       },
+      boxShadow: {
+        comic: "4px 4px 0px 0px rgba(0,0,0,1)",
+        "comic-md": "6px 6px 0px 0px rgba(0,0,0,1)",
+        "comic-lg": "8px 8px 0px 0px rgba(0,0,0,1)",
+      },
     },
   },
   plugins: [tailwindcssAnimate],

@@ -13,8 +13,11 @@ export default function MangaHeader({ mangaInfo, title, fallbackIcon, extra }: M
   const displayTitle = mangaInfo?.title || title;
   
   return (
-    <div className="border-b-[3px] border-foreground pb-4 mb-4 shrink-0">
-      <div className="flex gap-5">
+    <div className="relative z-10 pb-4 mb-4 shrink-0">
+      {/* Decorative underline layer */}
+      <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-foreground z-0" />
+      
+      <div className="relative z-10 flex gap-5">
         <div className="w-28 h-40 shrink-0 flex items-center justify-center border-2 border-foreground bg-manga-success overflow-hidden shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
           {mangaInfo?.cover ? (
             <img src={mangaInfo.cover} alt={displayTitle} className="w-full h-full object-cover" />
