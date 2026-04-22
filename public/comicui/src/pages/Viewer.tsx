@@ -385,13 +385,13 @@ export default function Viewer() {
               </div>
 
               <div className="flex items-center gap-1">
-                <button
+                {/* <button
                   onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }}
                   className={`reader-icon-btn ${showSettings ? "bg-reader-surface" : ""}`}
                   aria-label="设置"
                 >
                   <Settings className="w-5 h-5" />
-                </button>
+                </button> */}
                 <button
                   onClick={(e) => { e.stopPropagation(); setFullscreen(!fullscreen); }}
                   className="reader-icon-btn"

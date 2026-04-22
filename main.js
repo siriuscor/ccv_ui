@@ -52,7 +52,7 @@ async function newPage(skipAdblock = false) {
 
 // Sites that have issues with adblocking
 const ADBLOCK_SKIP_SITES = [];//['manhuagui'];
-const EXTRA_HEADERS_SITES = ['manhuagui'];
+const EXTRA_HEADERS_SITES = [];//['manhuagui'];
 
 function shouldSkipAdblock(url, site) {
     if (site && ADBLOCK_SKIP_SITES.includes(site)) return true;
