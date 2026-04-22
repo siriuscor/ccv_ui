@@ -36,7 +36,7 @@ export default function DownloadQueue({ items, onPause, onResume, onRemove, onCl
 
   if (items.length === 0) {
     return (
-      <div className="p-12 flex flex-col items-center justify-center bg-white border-[3px] border-foreground rounded-2xl shadow-comic m-2">
+      <div className="p-12 flex flex-col items-center justify-center bg-white border-[3px] border-foreground shadow-comic m-2">
         <div className="relative mb-6">
           <Clock className="w-16 h-16 opacity-20" />
           <div className="absolute -top-4 -right-12 bg-manga-success text-white border-[3px] border-foreground px-3 py-1 rounded-xl shadow-sm rotate-6 font-black italic text-lg z-10">
@@ -69,7 +69,7 @@ export default function DownloadQueue({ items, onPause, onResume, onRemove, onCl
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="px-4 py-3 bg-white border-[3px] border-foreground rounded-xl mb-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-comic transition-shadow flex items-center gap-3"
+              className="px-4 py-3 bg-white border-[3px] border-foreground rounded-xl mb-2 mr-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-comic transition-shadow flex items-center gap-3"
             >
               <div className="shrink-0 p-2 bg-muted rounded-xl border-2 border-foreground">{STATUS_ICON[item.status]}</div>
               <div className="flex-1 min-w-0">

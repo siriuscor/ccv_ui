@@ -224,7 +224,10 @@ const Index = () => {
         <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-foreground z-0" />
         
         <div className="relative z-10 container max-w-6xl mx-auto px-4 h-full flex items-center justify-between">
-          <div className="flex items-center gap-3 bg-manga-gold/20 px-4 py-2 rounded-xl border-4 border-foreground shadow-comic rotate-[-2deg] transition-transform hover:rotate-[-1deg]">
+          <div
+            className="flex items-center gap-3 px-4 py-2 rounded-xl border-4 border-foreground shadow-comic rotate-[-2deg] transition-transform hover:rotate-[-1deg]"
+            style={{ backgroundColor: "color-mix(in hsl, hsl(var(--manga-gold)) 20%, hsl(var(--background)))" }}
+          >
             <img src="../../icon.png" alt="logo" className="w-10 h-10 object-contain drop-shadow-md" />
             <h1 className="manga-header text-4xl tracking-wider text-manga-ink drop-shadow-[2px_2px_0px_#fff]">Manmori</h1>
           </div>
@@ -258,19 +261,19 @@ const Index = () => {
                 <div className="flex gap-3 mb-6 px-1">
                   <button
                     onClick={() => setView({ type: "search", tab: "search" })}
-                    className={`flex-1 py-3 px-2 font-black italic tracking-wide text-lg border-[3px] border-foreground rounded-xl transition-all ${view.tab === 'search' ? 'bg-manga-gold text-foreground shadow-comic-md -translate-y-1' : 'bg-card text-muted-foreground shadow-comic hover:-translate-y-0.5 hover:shadow-comic-md hover:bg-white'}`}
+                    className={`flex-1 py-3 px-2 font-black italic tracking-wide text-lg border-[3px] border-foreground transition-all ${view.tab === 'search' ? 'bg-manga-gold text-foreground shadow-comic-md -translate-y-1' : 'bg-card text-muted-foreground shadow-comic hover:-translate-y-0.5 hover:shadow-comic-md hover:bg-white'}`}
                   >
                     搜索
                   </button>
                   <button
                     onClick={() => setView({ type: "search", tab: "downloaded" })}
-                    className={`flex-1 py-3 px-2 font-black italic tracking-wide text-lg border-[3px] border-foreground rounded-xl transition-all ${view.tab === 'downloaded' ? 'bg-manga-success text-white shadow-comic-md -translate-y-1' : 'bg-card text-muted-foreground shadow-comic hover:-translate-y-0.5 hover:shadow-comic-md hover:bg-white'}`}
+                    className={`flex-1 py-3 px-2 font-black italic tracking-wide text-lg border-[3px] border-foreground transition-all ${view.tab === 'downloaded' ? 'bg-manga-success text-white shadow-comic-md -translate-y-1' : 'bg-card text-muted-foreground shadow-comic hover:-translate-y-0.5 hover:shadow-comic-md hover:bg-white'}`}
                   >
                     已下载
                   </button>
                   <button
                     onClick={() => setView({ type: "search", tab: "queue" })}
-                    className={`flex-1 py-3 px-2 font-black italic tracking-wide text-lg border-[3px] border-foreground rounded-xl transition-all ${view.tab === 'queue' ? 'bg-manga-red text-white shadow-comic-md -translate-y-1' : 'bg-card text-muted-foreground shadow-comic hover:-translate-y-0.5 hover:shadow-comic-md hover:bg-white'}`}
+                    className={`flex-1 py-3 px-2 font-black italic tracking-wide text-lg border-[3px] border-foreground transition-all ${view.tab === 'queue' ? 'bg-manga-red text-white shadow-comic-md -translate-y-1' : 'bg-card text-muted-foreground shadow-comic hover:-translate-y-0.5 hover:shadow-comic-md hover:bg-white'}`}
                   >
                     任务 ({tasks.length})
                   </button>
