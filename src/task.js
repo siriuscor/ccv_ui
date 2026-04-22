@@ -1,5 +1,16 @@
 const { ChapterDownloader } = require('./mantaku');
 const { EventEmitter } = require('events');
+
+function isSameTask(task, candidate) {
+    const taskPath = task.path || task.opts?.path;
+    const taskTitle = task.title || task.opts?.title;
+    const taskUrl = task.url || task.opts?.url;
+    return taskPath === candidate.path && (
+        taskTitle === candidate.title ||
+        (taskUrl && candidate.url && taskUrl === candidate.url)
+    );
+}
+
 class DownloadTask extends ChapterDownloader {
     constructor(url, title, path, type, mangaInfo) {
         super();
@@ -51,7 +62,17 @@ class TaskManager extends EventEmitter {
     }
 
     addChapter(chapters, type, mangeInfo, path) {
+        const result = { added: [], skipped: [] };
         for (let chapter of chapters) {
+            const candidate = {
+                url: chapter.url,
+                title: chapter.title,
+                path: path || this.path,
+            };
+            if (this.tasks.some(task => isSameTask(task, candidate))) {
+                result.skipped.push(chapter);
+                continue;
+            }
             let task = new ChapterDownloader({
                 url: chapter.url,
                 title: chapter.title,
@@ -60,7 +81,9 @@ class TaskManager extends EventEmitter {
                 mangaInfo: mangeInfo,
             });
             this.tasks.push(task);
+            result.added.push(chapter);
         }
+        return result;
     }
 
     start() {
@@ -261,7 +284,17 @@ class TaskQueue extends EventEmitter {
     }
 
     addChapter(chapters, type, mangeInfo, path) {
+        const result = { added: [], skipped: [] };
         for (let chapter of chapters) {
+            const candidate = {
+                url: chapter.url,
+                title: chapter.title,
+                path: path,
+            };
+            if (this.queue.some(task => isSameTask(task, candidate))) {
+                result.skipped.push(chapter);
+                continue;
+            }
             let task = new ChapterDownloader({
                 url: chapter.url,
                 title: chapter.title,
@@ -270,7 +303,9 @@ class TaskQueue extends EventEmitter {
                 mangaInfo: mangeInfo,
             });
             this.addTask(task);
+            result.added.push(chapter);
         }
+        return result;
     }
 
     clean() { // clean finished task

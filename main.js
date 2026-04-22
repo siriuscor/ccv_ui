@@ -4,6 +4,7 @@ const pie = require("puppeteer-in-electron")
 const puppeteer = require("puppeteer-core");
 const { Mantaku, SiteManager } = require('./src/mantaku');
 const { TaskManager, TaskQueue } = require('./src/task');
+const { APP_CONFIG } = require('./src/config');
 
 const mantaku = new Mantaku();
 let taskManager = null;
@@ -50,7 +51,7 @@ async function newPage(skipAdblock = false) {
 }
 
 // Sites that have issues with adblocking
-const ADBLOCK_SKIP_SITES = ['manhuagui'];
+const ADBLOCK_SKIP_SITES = [];//['manhuagui'];
 const EXTRA_HEADERS_SITES = ['manhuagui'];
 
 function shouldSkipAdblock(url, site) {
@@ -130,7 +131,7 @@ async function init() {
     });
 
     ipcMain.handle('addChapter', async (event, opts) => {
-        taskManager.addChapter(opts.chapters, opts.type, opts.mangaInfo, opts.path);
+        return taskManager.addChapter(opts.chapters, opts.type, opts.mangaInfo, opts.path);
         // taskManager.start();
     });
 
@@ -156,6 +157,10 @@ async function init() {
 
     ipcMain.handle('appPath', (event) => {
         return app.getAppPath();
+    });
+
+    ipcMain.handle('getAppConfig', () => {
+        return APP_CONFIG;
     });
 
     ipcMain.handle('listDir', async (event, dir) => {

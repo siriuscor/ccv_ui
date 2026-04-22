@@ -32,10 +32,11 @@ export default function ComicSearch({
   onSearch,
   activeTab
 }: Props) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => sessionStorage.getItem('searchQuery') || '');
 
   const handleSearch = () => {
     if (query.trim()) {
+      sessionStorage.setItem('searchQuery', query);
       onSearch(query.trim());
     }
   };
@@ -48,7 +49,7 @@ export default function ComicSearch({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2 }}
       onClick={() => onSelect(result.url, result)}
-      className="bg-white p-3 text-left transition-all cursor-pointer group border-[3px] border-foreground rounded-2xl shadow-comic hover:-translate-y-1 hover:-translate-x-1 hover:shadow-comic-md hover:scale-[1.02] active:translate-y-0 active:translate-x-0 active:shadow-none flex flex-col relative overflow-hidden"
+      className="min-w-0 max-w-full overflow-hidden bg-card p-2 text-left hover:bg-muted transition-colors cursor-pointer group border-b border-r border-border flex flex-col"
     >
       <div className={`w-full aspect-[3/4] shrink-0 flex items-center justify-center border-[3px] border-foreground rounded-xl bg-manga-gold/20 overflow-hidden relative transition-transform`}>
         {result.cover ? (
@@ -64,11 +65,11 @@ export default function ComicSearch({
           </div>
         )}
       </div>
-      <div className="min-w-0 flex-1 pt-3">
-        <h3 className="font-serif text-base font-black leading-tight truncate group-hover:text-manga-red transition-colors" title={result.title}>
+      <div className="w-full min-w-0 max-w-full flex-1 pt-2 overflow-hidden">
+        <h3 className="w-full max-w-full overflow-hidden font-serif text-sm leading-tight truncate group-hover:text-accent transition-colors" title={result.title}>
           {result.title}
         </h3>
-        <p className="text-sm font-bold text-muted-foreground truncate mt-1">{result.author || '未知作者'}</p>
+        <p className="w-full max-w-full overflow-hidden text-xs text-muted-foreground truncate">{result.author || '未知作者'}</p>
       </div>
     </motion.button>
   );
@@ -81,7 +82,7 @@ export default function ComicSearch({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2 }}
       onClick={() => onSelectDownloaded(comic)}
-      className="bg-white p-3 text-left transition-all cursor-pointer group border-[3px] border-foreground rounded-xl shadow-comic hover:-translate-y-1 hover:-translate-x-1 hover:shadow-comic-md hover:scale-[1.02] active:translate-y-0 active:translate-x-0 active:shadow-none flex flex-col"
+      className="min-w-0 max-w-full overflow-hidden bg-card p-2 text-left hover:bg-muted transition-colors cursor-pointer group border-b border-r border-border last:border-b-0 flex flex-col"
     >
       <div className={`w-full aspect-[3/4] shrink-0 flex items-center justify-center border-[3px] border-foreground rounded-lg bg-manga-success/20 overflow-hidden relative transition-transform`}>
         {comic.mangaInfo && comic.mangaInfo.cover ? (
@@ -96,11 +97,11 @@ export default function ComicSearch({
           {comic.files.length} 卷
         </div>
       </div>
-      <div className="min-w-0 flex-1 pt-3">
-        <h3 className="font-serif text-base font-black leading-tight truncate group-hover:text-manga-success transition-colors" title={comic.mangaInfo?.title || comic.title}>
+      <div className="w-full min-w-0 max-w-full flex-1 pt-2 overflow-hidden">
+        <h3 className="w-full max-w-full overflow-hidden font-serif text-sm leading-tight truncate group-hover:text-accent transition-colors" title={comic.mangaInfo?.title || comic.title}>
           {comic.mangaInfo?.title || comic.title}
         </h3>
-        <p className="text-sm font-bold text-muted-foreground truncate mt-1">{comic.mangaInfo?.author || `本地缓存`}</p>
+        <p className="w-full max-w-full overflow-hidden text-xs text-muted-foreground truncate">{comic.mangaInfo?.author || `${comic.files.length} 个文件`}</p>
       </div>
     </motion.button>
   );
@@ -115,7 +116,7 @@ export default function ComicSearch({
               <Search className="w-6 h-6 text-foreground shrink-0" />
               <Input
                 value={query}
-                onChange={e => setQuery(e.target.value)}
+                onChange={e => { setQuery(e.target.value); sessionStorage.setItem('searchQuery', e.target.value); }}
                 onKeyDown={e => e.key === 'Enter' && handleSearch()}
                 placeholder="搜索漫画资源..."
                 className="border-0 bg-transparent text-xl font-black italic focus-visible:ring-0 placeholder:text-muted-foreground px-2 h-12"
@@ -150,9 +151,9 @@ export default function ComicSearch({
       )}
 
       {/* Results List */}
-      <div className="flex-1 overflow-y-auto pr-2 pb-4">
-        <div className="h-full overflow-y-auto">
-          <div className="grid grid-cols-3 gap-6 p-2">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden border-2 border-foreground">
+        <div className="h-full overflow-y-auto overflow-x-hidden">
+          <div className="grid grid-cols-4 overflow-x-hidden">
             {activeTab === "search" ? (
               searchResults.length > 0 ? (
                 searchResults.map(result => renderComic(result, downloadedComics.some(d => d.title === result.title)))

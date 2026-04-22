@@ -57,6 +57,9 @@ window.api = {
   async appPath() {
     return await ipcRenderer.invoke('appPath');
   },
+  async getAppConfig() {
+    return await ipcRenderer.invoke('getAppConfig');
+  },
   async selectFolder() {
     return await ipcRenderer.invoke('selectFolder');
   },

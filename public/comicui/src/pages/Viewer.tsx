@@ -7,15 +7,14 @@ import {
   Maximize2, 
   Minimize2,
   Settings,
-  Grid3X3,
   BookOpen,
   Sun,
   ArrowRight,
   ArrowDown,
-  X,
   Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 type ReadingMode = "ltr" | "rtl" | "vertical";
 
@@ -38,7 +37,6 @@ export default function Viewer() {
   const [showControls, setShowControls] = useState(true);
   const [readingMode, setReadingMode] = useState<ReadingMode>("rtl");
   const [showSettings, setShowSettings] = useState(false);
-  const [showThumbnails, setShowThumbnails] = useState(false);
   const [brightness, setBrightness] = useState(100);
   const [isVertical, setIsVertical] = useState(false);
   const [pageCache, setPageCache] = useState<Record<number, string>>({});
@@ -152,8 +150,6 @@ export default function Viewer() {
           setFullscreen(false);
         } else if (showSettings) {
           setShowSettings(false);
-        } else if (showThumbnails) {
-          setShowThumbnails(false);
         } else {
           navigate(-1);
         }
@@ -163,7 +159,7 @@ export default function Viewer() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [totalPages, readingMode, fullscreen, showSettings, showThumbnails, navigate]);
+  }, [totalPages, readingMode, fullscreen, showSettings, navigate]);
 
   useEffect(() => {
     if (fullscreen) {
@@ -390,13 +386,6 @@ export default function Viewer() {
 
               <div className="flex items-center gap-1">
                 <button
-                  onClick={(e) => { e.stopPropagation(); setShowThumbnails(!showThumbnails); }}
-                  className={`reader-icon-btn ${showThumbnails ? "bg-reader-surface" : ""}`}
-                  aria-label="缩略图"
-                >
-                  <Grid3X3 className="w-5 h-5" />
-                </button>
-                <button
                   onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }}
                   className={`reader-icon-btn ${showSettings ? "bg-reader-surface" : ""}`}
                   aria-label="设置"
@@ -417,119 +406,7 @@ export default function Viewer() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {showControls && showSettings && (
-          <motion.div
-            className="reader-settings"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            transition={{ duration: 0.2 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="reader-chapter-title text-sm">阅读设置</h3>
-              <button
-                onClick={() => setShowSettings(false)}
-                className="reader-icon-btn"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs text-reader-muted mb-2 block">阅读方向</label>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => { setReadingMode("ltr"); setIsVertical(false); }}
-                    className={`reader-mode-btn flex items-center gap-1 ${readingMode === "ltr" && !isVertical ? "active" : ""}`}
-                  >
-                    <ArrowRight className="w-3 h-3" />
-                    <span>从左到右</span>
-                  </button>
-                  <button
-                    onClick={() => { setReadingMode("rtl"); setIsVertical(false); }}
-                    className={`reader-mode-btn flex items-center gap-1 ${readingMode === "rtl" && !isVertical ? "active" : ""}`}
-                  >
-                    <ArrowLeft className="w-3 h-3" />
-                    <span>从右到左</span>
-                  </button>
-                  <button
-                    onClick={() => { setIsVertical(true); }}
-                    className={`reader-mode-btn flex items-center gap-1 ${isVertical ? "active" : ""}`}
-                  >
-                    <ArrowDown className="w-3 h-3" />
-                    <span>垂直滚动</span>
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs text-reader-muted mb-2 block flex items-center gap-2">
-                  <Sun className="w-3 h-3" />
-                  亮度
-                </label>
-                <input
-                  type="range"
-                  min={20}
-                  max={100}
-                  value={brightness}
-                  onChange={(e) => setBrightness(Number(e.target.value))}
-                  className="reader-brightness"
-                />
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showControls && showThumbnails && (
-          <motion.div
-            className="reader-footer"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            transition={{ duration: 0.2 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="reader-chapter-title text-sm">选择页面</h3>
-                <button
-                  onClick={() => setShowThumbnails(false)}
-                  className="reader-icon-btn"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="reader-thumbnails">
-                {images.map((imgName, i) => (
-                  <button
-                    key={i}
-                    onClick={() => {
-                      setCurrentPage(i);
-                      setShowThumbnails(false);
-                    }}
-                    className={`reader-thumbnail ${i === currentPage ? "active" : ""}`}
-                  >
-                    {pageCache[i] ? (
-                      <img src={pageCache[i]} alt={`第${i + 1}页`} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-muted">
-                        <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showControls && !isVertical && !showThumbnails && (
+        {showControls && !isVertical && (
           <motion.footer 
             className="reader-footer"
             initial={{ opacity: 0, y: 20 }}
@@ -539,6 +416,29 @@ export default function Viewer() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4 space-y-4">
+              <div>
+                <h3 className="reader-chapter-title text-sm mb-3">选择页面</h3>
+                <div className="reader-thumbnails">
+                  {images.map((imgName, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        setCurrentPage(i);
+                      }}
+                      className={`reader-thumbnail ${i === currentPage ? "active" : ""}`}
+                    >
+                      {pageCache[i] ? (
+                        <img src={pageCache[i]} alt={`第${i + 1}页`} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-muted">
+                          <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex items-center gap-3">
                 <span className="reader-page-indicator text-xs min-w-[40px]">
                   {currentPage + 1}
@@ -586,6 +486,62 @@ export default function Viewer() {
           </motion.footer>
         )}
       </AnimatePresence>
+
+      <Sheet open={showSettings} onOpenChange={setShowSettings}>
+        <SheetContent
+          side="bottom"
+          className="bg-background/95 backdrop-blur-sm border-t border-border"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <SheetHeader className="mb-4">
+            <SheetTitle>阅读设置</SheetTitle>
+          </SheetHeader>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs text-reader-muted mb-2 block">阅读方向</label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => { setReadingMode("ltr"); setIsVertical(false); }}
+                  className={`reader-mode-btn flex items-center gap-1 ${readingMode === "ltr" && !isVertical ? "active" : ""}`}
+                >
+                  <ArrowRight className="w-3 h-3" />
+                  <span>从左到右</span>
+                </button>
+                <button
+                  onClick={() => { setReadingMode("rtl"); setIsVertical(false); }}
+                  className={`reader-mode-btn flex items-center gap-1 ${readingMode === "rtl" && !isVertical ? "active" : ""}`}
+                >
+                  <ArrowLeft className="w-3 h-3" />
+                  <span>从右到左</span>
+                </button>
+                <button
+                  onClick={() => { setIsVertical(true); }}
+                  className={`reader-mode-btn flex items-center gap-1 ${isVertical ? "active" : ""}`}
+                >
+                  <ArrowDown className="w-3 h-3" />
+                  <span>垂直滚动</span>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs text-reader-muted mb-2 block flex items-center gap-2">
+                <Sun className="w-3 h-3" />
+                亮度
+              </label>
+              <input
+                type="range"
+                min={20}
+                max={100}
+                value={brightness}
+                onChange={(e) => setBrightness(Number(e.target.value))}
+                className="reader-brightness"
+              />
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

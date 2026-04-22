@@ -8,6 +8,7 @@ import DownloadQueue from "@/components/DownloadQueue";
 import SettingsDialog from "@/components/SettingsDialog";
 import { type Site, type SiteStatus, type SearchResult, type MangaInfo, type TaskItem, type DownloadedComic, getApi } from "@/lib/api";
 import { motion } from "framer-motion";
+import { toast } from "@/components/ui/sonner";
 
 type View = { type: "search"; tab: "search" | "downloaded" | "queue" } | { type: "chapters"; url: string } | { type: "downloaded_viewer"; comic: DownloadedComic };
 
@@ -56,16 +57,16 @@ const Index = () => {
   const fetchDownloadedComics = useCallback(async () => {
     if (!downloadPath) return;
     try {
+      const { mangaInfoFileName } = await getApi().getAppConfig();
       const dirs = await getApi().listDirs(downloadPath);
       const comics: DownloadedComic[] = [];
       for (const dir of dirs) {
         const dirPath = downloadPath + '/' + dir;
         const files = await getApi().listDir(dirPath);
+        if (!files.includes(mangaInfoFileName)) continue;
         const comicFiles = files.filter(f => f.match(/\.(cbz|zip|epub)$/i));
-        if (comicFiles.length > 0) {
-          const mangaInfo = await getApi().readJson(dirPath + '/mangaInfo.json');
-          comics.push({ title: dir, path: dirPath, files: comicFiles, mangaInfo });
-        }
+        const mangaInfo = await getApi().readJson(dirPath + '/' + mangaInfoFileName);
+        comics.push({ title: dir, path: dirPath, files: comicFiles, mangaInfo });
       }
       setDownloadedComics(comics);
     } catch {
@@ -187,7 +188,19 @@ const Index = () => {
 
   const handleDownload = useCallback(async (mangaInfo: MangaInfo, chapters: { title: string; url: string }[]) => {
     const path = downloadPath + '/' + mangaInfo.title + '/';
-    await getApi().addChapter(chapters, mangaInfo, path, packType);
+    const result = await getApi().addChapter(chapters, mangaInfo, path, packType);
+    if (result.skipped.length > 0) {
+      const duplicateTitles = result.skipped.slice(0, 3).map(ch => ch.title).join('、');
+      const moreCount = result.skipped.length - Math.min(result.skipped.length, 3);
+      toast("重复章节已跳过", {
+        description: moreCount > 0
+          ? `${duplicateTitles} 等 ${result.skipped.length} 个章节已在队列中`
+          : `${duplicateTitles} 已在队列中`,
+      });
+    }
+    if (result.added.length <= 0) {
+      return;
+    }
     const taskList = await getApi().getTaskList();
     setTasks(taskList);
     // After starting download, usually we stay in the current view or return to search if explicitly desired.

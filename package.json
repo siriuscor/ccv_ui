@@ -1,6 +1,6 @@
 {
   "name": "manmori",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "grab your loved comic",
   "main": "main.js",
   "scripts": {

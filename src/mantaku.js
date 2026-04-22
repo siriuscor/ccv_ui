@@ -3,6 +3,7 @@ const { EventEmitter } = require('events');
 const mime = require('mime');
 const p = require('path');
 const utils = require('./utils');
+const { APP_CONFIG } = require('./config');
 
 class Mantaku {
     constructor() {
@@ -194,6 +195,44 @@ class ChapterDownloader extends EventEmitter {
         }
     }
 
+    async fetchCoverAsBase64(page, coverUrl) {
+        const coverPage = await page.browser().newPage();
+        try {
+            const response = await coverPage.goto(coverUrl, { timeout: 10000, waitUntil: 'load' });
+            if (!response) {
+                throw new Error('cover request returned empty response');
+            }
+            const buffer = await response.buffer();
+            const mimeType = (response.headers()['content-type'] || 'image/jpeg').split(';')[0];
+            return `data:${mimeType};base64,${buffer.toString('base64')}`;
+        } finally {
+            await coverPage.close().catch(() => {});
+        }
+    }
+
+    async convertWebpBufferToJpeg(page, buffer) {
+        const webpBase64 = buffer.toString('base64');
+        const jpegBase64 = await page.evaluate(async (base64) => {
+            const dataUrl = `data:image/webp;base64,${base64}`;
+            const image = await new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error('The source image could not be decoded.'));
+                img.src = dataUrl;
+            });
+            const canvas = document.createElement('canvas');
+            canvas.width = image.naturalWidth || image.width;
+            canvas.height = image.naturalHeight || image.height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                throw new Error('Canvas 2D context unavailable');
+            }
+            ctx.drawImage(image, 0, 0);
+            return canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
+        }, webpBase64);
+        return Buffer.from(jpegBase64, 'base64');
+    }
+
     async download(page, url, title, path, packType, mangaInfo) {
         this.changeStatus('downloading');
         this.current = 0;
@@ -210,136 +249,123 @@ class ChapterDownloader extends EventEmitter {
         }
         page.on('response', responseListener);
 
-        await page.goto(url);
-        await SiteManager.injectSiteScript(page);
-        let total = await page.evaluate(async () => {
-            return await __mantaku.totalPage();
-        });
-
-        this.total = total;
-        let savePath = p.normalize(p.resolve(path, title));
-        await fs.ensureDir(savePath);
-
-        let mangaInfoPath = p.resolve(path, 'mangaInfo.json');
         try {
-            if (mangaInfo && !(await fs.exists(mangaInfoPath))) {
-                await fs.ensureDir(path);
-                const infoToSave = { ...mangaInfo };
-                delete infoToSave.chapters;
-                // Convert cover image to base64
-                if (infoToSave.cover && infoToSave.cover.startsWith('http')) {
-                    try {
-                        const response = await page.goto(infoToSave.cover, { timeout: 10000 });
-                        const buffer = await response.buffer();
-                        const base64 = buffer.toString('base64');
-                        const mimeType = response.headers()['content-type'] || 'image/jpeg';
-                        infoToSave.cover = `data:${mimeType};base64,${base64}`;
-                    } catch (e) {
-                        console.error('Failed to convert cover to base64:', e.message);
-                    }
-                }
-                await fs.writeJson(mangaInfoPath, infoToSave, { spaces: 2 });
-            }
-        } catch (e) { console.error('save mangaInfo error', e); }
+            await page.goto(url);
+            await SiteManager.injectSiteScript(page);
+            let total = await page.evaluate(async () => {
+                return await __mantaku.totalPage();
+            });
 
-        let hasGoPageFunc = await page.evaluate(async () => {
-            return __mantaku.goPage ? true : false;
-        });
-        let begin = 1;
-        if (hasGoPageFunc) {
-            // 检查已经下载的图片
-            let files = await fs.readdir(savePath);
-            if (files.length > 0) {
-                let names = files.map(f => p.parse(f).name);
-                for (let i = 1; i <= total; i++) {
-                    let padNum = i.toString().padStart(3, '0');
-                    if (names.includes(padNum)) {
-                        begin = i;
-                    } else {
-                        break;
-                    }
-                }
-                begin = begin + 1; // 从下一张开始
-            }
-            console.log(`skip check, ${url} ${title}, begin from ${begin} page`);
-            await page.evaluate(async (i) => {
-                return await __mantaku.goPage(i);
-            }, begin);
-            this.current = begin;
-            this.emit('progress', begin, total);
-        }
+            this.total = total;
+            let savePath = p.normalize(p.resolve(path, title));
+            await fs.ensureDir(savePath);
 
-        for (let i = begin; i <= total; i++) {
-            // 检查是否被取消
-            if (this._cancelled) {
-                this.emit('cancelled', i, total);
-                break;
-            }
-            // 检查是否暂停
-            if (this._paused) {
-                await new Promise(resolve => {
-                    this._resume = resolve;
-                    this._pausePromise = this._pausePromise || new Promise(r => this._resume = r);
-                    this.emit('paused', i, total);
-                    return this._pausePromise;
-                });
-                // this.emit('resume', i, total);
-            }
-            let image = await page.evaluate(async (i) => {
-                return await __mantaku.getImage(i);
-            }, i);
-            let fromCache = imageCache[image];
-            if (!fromCache) {
-                console.error('image not found in cache', image);
-                throw new Error('image not found');
-            } else {
-                //debug(`save image ${url} -> ${savePath}`);
-                let padNum = i.toString().padStart(3, '0');
-                if (fromCache.mimeType === 'webp') {
-                    try {
-                        const base64Data = await page.evaluate(async (url) => {
-                            try {
-                                const response = await fetch(url);
-                                const blob = await response.blob();
-                                const img = await createImageBitmap(blob);
-                                const canvas = document.createElement('canvas');
-                                canvas.width = img.width;
-                                canvas.height = img.height;
-                                canvas.getContext('2d').drawImage(img, 0, 0);
-                                return canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
-                            } catch (err) {
-                                throw new Error('Canvas conversion failed: ' + err.message);
-                            }
-                        }, image);
-                        await fs.outputFile(`${savePath}/${padNum}.jpg`, Buffer.from(base64Data, 'base64'));
-                        console.log(`[OK] Page ${padNum} converted to JPEG via browser`);
-                    } catch (e) {
-                        console.error(`[WARN] Page ${padNum} conversion failed, saving original webp:`, e.message);
-                        await fs.outputFile(`${savePath}/${padNum}.webp`, await fromCache.buffer());
+            let mangaInfoPath = p.resolve(path, APP_CONFIG.mangaInfoFileName);
+            try {
+                if (mangaInfo && !(await fs.exists(mangaInfoPath))) {
+                    await fs.ensureDir(path);
+                    const infoToSave = { ...mangaInfo };
+                    delete infoToSave.chapters;
+                    // Convert cover image to base64 without navigating away from the chapter page.
+                    if (infoToSave.cover && infoToSave.cover.startsWith('http')) {
+                        try {
+                            infoToSave.cover = await this.fetchCoverAsBase64(page, infoToSave.cover);
+                        } catch (e) {
+                            console.error('Failed to convert cover to base64:', e.message);
+                        }
                     }
+                    await fs.writeJson(mangaInfoPath, infoToSave, { spaces: 2 });
+                }
+            } catch (e) { console.error('save mangaInfo error', e); }
+
+            let hasGoPageFunc = await page.evaluate(async () => {
+                return __mantaku.goPage ? true : false;
+            });
+            let begin = 1;
+            if (hasGoPageFunc) {
+                // 检查已经下载的图片
+                let files = await fs.readdir(savePath);
+                if (files.length > 0) {
+                    let names = files.map(f => p.parse(f).name);
+                    for (let i = 1; i <= total; i++) {
+                        let padNum = i.toString().padStart(3, '0');
+                        if (names.includes(padNum)) {
+                            begin = i;
+                        } else {
+                            break;
+                        }
+                    }
+                    begin = begin + 1; // 从下一张开始
+                }
+                console.log(`skip check, ${url} ${title}, begin from ${begin} page`);
+                await page.evaluate(async (i) => {
+                    return await __mantaku.goPage(i);
+                }, begin);
+                this.current = begin;
+                this.emit('progress', begin, total);
+            }
+
+            for (let i = begin; i <= total; i++) {
+                // 检查是否被取消
+                if (this._cancelled) {
+                    this.emit('cancelled', i, total);
+                    break;
+                }
+                // 检查是否暂停
+                if (this._paused) {
+                    await new Promise(resolve => {
+                        this._resume = resolve;
+                        this._pausePromise = this._pausePromise || new Promise(r => this._resume = r);
+                        this.emit('paused', i, total);
+                        return this._pausePromise;
+                    });
+                    // this.emit('resume', i, total);
+                }
+                let image = await page.evaluate(async (i) => {
+                    return await __mantaku.getImage(i);
+                }, i);
+                let fromCache = imageCache[image];
+                if (!fromCache) {
+                    console.error('image not found in cache', image);
+                    throw new Error('image not found');
                 } else {
-                    await fs.outputFile(`${savePath}/${padNum}.${fromCache.mimeType}`, await fromCache.buffer());
-                    if (fromCache.mimeType === 'png') {
-                        await utils.convertPng(savePath, padNum);
+                    //debug(`save image ${url} -> ${savePath}`);
+                    let padNum = i.toString().padStart(3, '0');
+                    if (fromCache.mimeType === 'webp') {
+                        try {
+                            const webpBuffer = await fromCache.buffer();
+                            const jpegBuffer = await this.convertWebpBufferToJpeg(page, webpBuffer);
+                            await fs.outputFile(`${savePath}/${padNum}.jpg`, jpegBuffer);
+                            console.log(`[OK] Page ${padNum} converted to JPEG via browser(base64)`);
+                        } catch (e) {
+                            console.error(`[ERROR] Page ${padNum} webp conversion failed:`, e.message);
+                            throw new Error(`Page ${padNum} webp conversion failed: ${e.message}`);
+                        }
+                    } else {
+                        await fs.outputFile(`${savePath}/${padNum}.${fromCache.mimeType}`, await fromCache.buffer());
+                        if (fromCache.mimeType === 'png') {
+                            await utils.convertPng(savePath, padNum);
+                        }
                     }
                 }
+
+                await page.evaluate(async (i) => {
+                    await __mantaku.nextPage(i);
+                }, i);
+
+                this.current = i;
+                this.emit('progress', i, total);
             }
 
-            await page.evaluate(async (i) => {
-                await __mantaku.nextPage(i);
-            }, i);
-
-            this.current = i;
-            this.emit('progress', i, total);
-        }
-        page.off('response', responseListener);
-
-        if (!this._cancelled) {
-            this.changeStatus('packing');
-            let dir = p.resolve(path, title);
-            await utils.pack(dir, p.resolve(path, title), packType, mangaInfo);
-            await utils.rmdir(dir);
-            this.changeStatus('completed');
+            if (!this._cancelled) {
+                this.changeStatus('packing');
+                let dir = p.resolve(path, title);
+                await utils.pack(dir, p.resolve(path, title), packType, mangaInfo);
+                await utils.rmdir(dir);
+                this.changeStatus('completed');
+            }
+        } finally {
+            page.off('response', responseListener);
         }
     }
 
