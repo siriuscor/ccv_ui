@@ -4,7 +4,7 @@ Manmori 是一款基于 Electron、Puppeteer 和 React 的桌面漫画下载与�
 
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-blue)
 ![Electron](https://img.shields.io/badge/Electron-31.x-brightgreen)
-![Version](https://img.shields.io/badge/version-1.0.2-orange)
+![Version](https://img.shields.io/badge/version-1.0.4-orange)
 
 ## 功能
 
