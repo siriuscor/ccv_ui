@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, Download, CheckSquare, Square, ChevronsUpDown, Loader2, Eye } from "lucide-react";
+import { useState, useMemo, useEffect, useRef, type MouseEvent } from "react";
+import { ArrowLeft, Download, CheckSquare, Square, ChevronsUpDown, Loader2, Eye, ListRestart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type MangaInfo, getApi } from "@/lib/api";
 import { motion } from "framer-motion";
@@ -17,9 +17,10 @@ type Props = {
 export default function ChapterSelector({ mangaUrl, onBack, onDownload, onRead, downloadPath }: Props) {
   const [mangaInfo, setMangaInfo] = useState<MangaInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sortAsc, setSortAsc] = useState(true);
   const [downloadedChapters, setDownloadedChapters] = useState<Set<string>>(new Set());
+  const lastSelectedIndex = useRef<number | null>(null);
 
   useEffect(() => {
     const fetchMangaInfo = async () => {
@@ -62,13 +63,29 @@ export default function ChapterSelector({ mangaUrl, onBack, onDownload, onRead, 
     );
   }, [mangaInfo, sortAsc]);
 
-  const toggleChapter = (index: number) => {
+  const toggleChapter = (index: number, shiftKey: boolean) => {
     setSelected(prev => {
       const next = new Set(prev);
-      if (next.has(index)) {
-        next.delete(index);
+
+      if (shiftKey && lastSelectedIndex.current !== null) {
+        const start = Math.min(lastSelectedIndex.current, index);
+        const end = Math.max(lastSelectedIndex.current, index);
+        for (let i = start; i <= end; i += 1) {
+          next.add(sortedChapters[i].url);
+        }
+        lastSelectedIndex.current = index;
+        return next;
+      }
+
+      const chapterUrl = sortedChapters[index].url;
+      if (next.has(chapterUrl)) {
+        next.delete(chapterUrl);
+        if (lastSelectedIndex.current === index) {
+          lastSelectedIndex.current = null;
+        }
       } else {
-        next.add(index);
+        next.add(chapterUrl);
+        lastSelectedIndex.current = index;
       }
       return next;
     });
@@ -76,14 +93,21 @@ export default function ChapterSelector({ mangaUrl, onBack, onDownload, onRead, 
 
   const toggleAll = () => {
     if (!mangaInfo) return;
+    lastSelectedIndex.current = null;
     if (selected.size === mangaInfo.chapters.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(mangaInfo.chapters.map((_, i) => i)));
+      setSelected(new Set(mangaInfo.chapters.map(chapter => chapter.url)));
     }
   };
 
-  const selectedChapters = sortedChapters.filter((_, i) => selected.has(i));
+  const invertSelection = () => {
+    if (!mangaInfo) return;
+    lastSelectedIndex.current = null;
+    setSelected(prev => new Set(mangaInfo.chapters.map(chapter => chapter.url).filter(url => !prev.has(url))));
+  };
+
+  const selectedChapters = sortedChapters.filter(chapter => selected.has(chapter.url));
 
   if (loading) {
     return (
@@ -126,7 +150,14 @@ export default function ChapterSelector({ mangaUrl, onBack, onDownload, onRead, 
             {selected.size === mangaInfo.chapters.length ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
             {selected.size === mangaInfo.chapters.length ? "取消全选" : "全选"}
           </button>
-          <button onClick={() => setSortAsc(!sortAsc)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded px-1">
+          <button onClick={invertSelection} className="flex items-center gap-1.5 text-sm hover:text-foreground text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded px-1">
+            <ListRestart className="w-4 h-4" />
+            反选
+          </button>
+          <button onClick={() => {
+            lastSelectedIndex.current = null;
+            setSortAsc(!sortAsc);
+          }} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded px-1">
             <ChevronsUpDown className="w-4 h-4" />
             {sortAsc ? "正序" : "倒序"}
           </button>
@@ -139,7 +170,7 @@ export default function ChapterSelector({ mangaUrl, onBack, onDownload, onRead, 
       <ScrollArea className="h-[300px] border-2 border-foreground bg-card">
         <div className="grid grid-cols-3 gap-px bg-border p-px">
           {sortedChapters.map((ch, idx) => {
-            const isSelected = selected.has(idx);
+            const isSelected = selected.has(ch.url);
             const isDownloaded = downloadedChapters.has(ch.title);
             return (
               <div
@@ -149,7 +180,7 @@ export default function ChapterSelector({ mangaUrl, onBack, onDownload, onRead, 
                   }`}
               >
                 <button
-                  onClick={() => toggleChapter(idx)}
+                  onClick={(event: MouseEvent<HTMLButtonElement>) => toggleChapter(idx, event.shiftKey)}
                   className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
                 >
                   {isDownloaded ? (

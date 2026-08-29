@@ -13,9 +13,15 @@ let mainWindow = null;
 let windowIndex = 0;
 let downloadWindow = [];
 let debug = false;
+let backendInitPromise = null;
 // const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36';
 app.commandLine.appendSwitch('ignore-certificate-errors');
+pie.initialize(app);
+
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 
 async function newPage(skipAdblock = false) {
@@ -101,57 +107,91 @@ async function browseOnce(fn, skipAdblock = false, urlOrSite = null) {
     return result;
 }
 
-async function init() {
-    await pie.initialize(app);
+async function initializeBackend() {
     browser = await pie.connect(app, puppeteer);
-    await app.whenReady();
+    await mantaku.init({ usePuppeteer: false });
+    taskManager = new TaskQueue({
+        pages: [await newPage(), await newPage(), await newPage()],
+    });
 
+    taskManager.on('worker_progress', (worker_index, task, index, total) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('task_update');
+        }
+    });
+    taskManager.on('worker_status', (worker_index, task, status) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('task_update');
+        }
+    });
+    console.log("init mantaku over");
+}
+
+function ensureBackendReady() {
+    if (!backendInitPromise) {
+        backendInitPromise = initializeBackend();
+    }
+    return backendInitPromise;
+}
+
+function registerIpcHandlers() {
     ipcMain.handle('search', async (event, site, keyword) => {
+        await ensureBackendReady();
         return await browseOnce((page) => {
             return mantaku.search(page, site, keyword);
         }, shouldSkipAdblock(null, site), site);
     });
 
     ipcMain.handle('getSites', async (event) => {
+        await ensureBackendReady();
         return await mantaku.listSites();
     });
 
     ipcMain.handle('checkSites', async (event, sites) => {
+        await ensureBackendReady();
         return await SiteManager.checkConnectivity(sites);
     });
 
     ipcMain.handle('getMangaInfo', async (event, url) => {
+        await ensureBackendReady();
         return await browseOnce((page) => {
             return mantaku.getMangaInfo(page, url);
         }, shouldSkipAdblock(url, null), url);
     });
 
     ipcMain.handle('getTaskList', async (event) => {
+        await ensureBackendReady();
         return await taskManager.list();
     });
 
     ipcMain.handle('addChapter', async (event, opts) => {
+        await ensureBackendReady();
         return taskManager.addChapter(opts.chapters, opts.type, opts.mangaInfo, opts.path);
         // taskManager.start();
     });
 
     ipcMain.handle('loadTask', async (event, opts) => {
+        await ensureBackendReady();
         taskManager.loadTask(opts);
     });
 
     ipcMain.handle('pause', async (event, index) => {
+        await ensureBackendReady();
         taskManager.stop(index);
     });
 
     ipcMain.handle('clean', async (event) => {
+        await ensureBackendReady();
         taskManager.clean();
     });
 
     ipcMain.handle('resume', async (event, index) => {
+        await ensureBackendReady();
         taskManager.start(index);
     });
 
     ipcMain.handle('remove', async (event, index) => {
+        await ensureBackendReady();
         taskManager.removeTask(index);
     });
 
@@ -270,27 +310,6 @@ async function init() {
             return null;
         }
     });
-    // app.on('activate', () => {
-    //   if (BrowserWindow.getAllWindows().length === 0) createWindow()
-    // });
-    await mantaku.init({ usePuppeteer: false });
-    // taskManager = new TaskManager({
-    //     concurrency: 3,
-    //     pages: [await newPage(), await newPage(), await newPage()],
-    // });
-    taskManager = new TaskQueue({
-        // concurrency: 3,
-        pages: [await newPage(), await newPage(), await newPage()],
-    });
-
-    taskManager.on('worker_progress', (worker_index, task, index, total) => {
-        mainWindow.webContents.send('task_update');
-    });
-    taskManager.on('worker_status', (worker_index, task, status) => {
-        mainWindow.webContents.send('task_update');
-    });
-    console.log("init mantaku over");
-    await createWindow();
 }
 
 const createWindow = async () => {
@@ -328,7 +347,10 @@ const createWindow = async () => {
         splashWindow.show();
     });
 
-    setTimeout(() => {
+    const minimumSplashTime = delay(2000);
+    const backendReady = ensureBackendReady();
+
+    const mainWindowReady = new Promise((resolve, reject) => {
         mainWindow = new BrowserWindow({
             width: 648,
             height: 1152,
@@ -348,15 +370,21 @@ const createWindow = async () => {
         }
 
         mainWindow.once('ready-to-show', () => {
-            splashWindow.close();
-            mainWindow.show();
-            if (debug) mainWindow.webContents.openDevTools()
+            resolve();
+        });
+        mainWindow.webContents.once('did-fail-load', (_event, errorCode, errorDescription) => {
+            reject(new Error(`main window load failed: ${errorCode} ${errorDescription}`));
         });
 
         mainWindow.on('close', () => {
             app.quit();
         });
-    }, 2000);
+    });
+
+    await Promise.all([minimumSplashTime, backendReady, mainWindowReady]);
+    splashWindow.close();
+    mainWindow.show();
+    if (debug) mainWindow.webContents.openDevTools()
 }
 // createWindow()
 // app.whenReady().then(() => {
@@ -366,7 +394,17 @@ const createWindow = async () => {
 //   })
 // })
 
-init();
+async function init() {
+    await app.whenReady();
+    registerIpcHandlers();
+    await createWindow();
+}
+
+init().catch((error) => {
+    console.error('app init failed:', error);
+    dialog.showErrorBox('启动失败', error?.message || String(error));
+    app.quit();
+});
 app.on('window-all-closed', () => {
     // if (process.platform !== 'darwin') 
     app.quit()

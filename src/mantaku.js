@@ -16,7 +16,8 @@ class Mantaku {
             await this.initHeadlessBrowser(opts.puppeteerOpts);
         }
         const { PuppeteerBlocker } = require('@cliqz/adblocker-puppeteer');
-        this.blocker = PuppeteerBlocker.parse(fs.readFileSync(p.join(__dirname, 'easylist.txt'), 'utf-8'));
+        const easyList = await fs.readFile(p.join(__dirname, 'easylist.txt'), 'utf-8');
+        this.blocker = PuppeteerBlocker.parse(easyList);
     }
 
     listSites() {

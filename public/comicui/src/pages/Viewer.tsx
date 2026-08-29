@@ -15,8 +15,19 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { readLastReadingProgress, saveLastReadingProgress } from "@/lib/reading-progress";
 
 type ReadingMode = "ltr" | "rtl" | "vertical";
+type ChapterLink = { path: string; title: string };
 
 export default function Viewer() {
   const { comicId, chapterNum } = useParams();
@@ -40,9 +51,48 @@ export default function Viewer() {
   const [brightness, setBrightness] = useState(100);
   const [isVertical, setIsVertical] = useState(false);
   const [pageCache, setPageCache] = useState<Record<number, string>>({});
+  const [previousChapter, setPreviousChapter] = useState<ChapterLink | null>(null);
+  const [nextChapter, setNextChapter] = useState<ChapterLink | null>(null);
+  const [showNextChapterPrompt, setShowNextChapterPrompt] = useState(false);
+  const [loadedFilePath, setLoadedFilePath] = useState("");
 
   const totalPages = images.length;
   const hideControlsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const getChapterTitle = useCallback((path: string) => {
+    const fileName = path.split(/[\\/]/).pop() || "";
+    return fileName.replace(/\.(cbz|zip|epub)$/i, "");
+  }, []);
+
+  const goToPreviousPage = useCallback(() => {
+    setCurrentPage(page => Math.max(page - 1, 0));
+  }, []);
+
+  const goToNextPage = useCallback(() => {
+    if (currentPage >= totalPages - 1) {
+      setShowNextChapterPrompt(true);
+      setShowControls(true);
+      return;
+    }
+    setCurrentPage(page => Math.min(page + 1, totalPages - 1));
+  }, [currentPage, totalPages]);
+
+  const returnToComicList = useCallback(() => {
+    navigate("/", { replace: true });
+  }, [navigate]);
+
+  const continueToNextChapter = useCallback(() => {
+    if (!nextChapter) return;
+    const nextChapterNum = Number(chapterNum || 1) + 1;
+    setShowNextChapterPrompt(false);
+    navigate(`/viewer/${encodeURIComponent(nextChapter.path)}/${nextChapterNum}`, { replace: true });
+  }, [chapterNum, navigate, nextChapter]);
+
+  const goToPreviousChapter = useCallback(() => {
+    if (!previousChapter) return;
+    const previousChapterNum = Math.max(Number(chapterNum || 1) - 1, 1);
+    navigate(`/viewer/${encodeURIComponent(previousChapter.path)}/${previousChapterNum}`, { replace: true });
+  }, [chapterNum, navigate, previousChapter]);
 
   useEffect(() => {
     const loadImages = async () => {
@@ -53,15 +103,19 @@ export default function Viewer() {
       }
 
       setLoading(true);
+      setLoadedFilePath("");
       setError(null);
       try {
         const imageList = await window.api.getComicFiles(filePath);
         if (imageList.length === 0) {
           setError("无法读取漫画文件或文件中没有图片");
         } else {
+          const savedProgress = readLastReadingProgress();
+          const initialPage = savedProgress?.filePath === filePath ? savedProgress.page : 0;
           setImages(imageList);
-          setCurrentPage(0);
+          setCurrentPage(Math.min(Math.max(initialPage, 0), imageList.length - 1));
           setPageCache({});
+          setLoadedFilePath(filePath);
         }
       } catch (e) {
         setError("加载漫画失败: " + (e instanceof Error ? e.message : "未知错误"));
@@ -71,6 +125,58 @@ export default function Viewer() {
 
     loadImages();
   }, [filePath]);
+
+  useEffect(() => {
+    if (loadedFilePath !== filePath || images.length === 0) return;
+
+    const pathParts = filePath.split(/[\\/]/);
+    saveLastReadingProgress({
+      filePath,
+      comicTitle: pathParts[pathParts.length - 2] || "未知漫画",
+      chapterTitle: getChapterTitle(filePath),
+      page: currentPage,
+    });
+  }, [currentPage, filePath, getChapterTitle, images.length, loadedFilePath]);
+
+  useEffect(() => {
+    const loadAdjacentChapters = async () => {
+      setPreviousChapter(null);
+      setNextChapter(null);
+      setShowNextChapterPrompt(false);
+
+      const separatorIndex = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
+      if (separatorIndex < 0) return;
+
+      const directory = filePath.slice(0, separatorIndex);
+      const separator = filePath[separatorIndex];
+      const currentFileName = filePath.slice(separatorIndex + 1);
+
+      try {
+        const chapterFiles = (await window.api.listDir(directory))
+          .filter(file => /\.(cbz|zip|epub)$/i.test(file))
+          .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+        const currentIndex = chapterFiles.findIndex(file => file === currentFileName);
+        const previousFileName = currentIndex > 0 ? chapterFiles[currentIndex - 1] : undefined;
+        const nextFileName = currentIndex >= 0 ? chapterFiles[currentIndex + 1] : undefined;
+        if (previousFileName) {
+          setPreviousChapter({
+            path: `${directory}${separator}${previousFileName}`,
+            title: getChapterTitle(previousFileName),
+          });
+        }
+        if (nextFileName) {
+          setNextChapter({
+            path: `${directory}${separator}${nextFileName}`,
+            title: getChapterTitle(nextFileName),
+          });
+        }
+      } catch (e) {
+        console.error("Failed to find adjacent chapters:", e);
+      }
+    };
+
+    loadAdjacentChapters();
+  }, [filePath, getChapterTitle]);
 
   useEffect(() => {
     const loadPage = async () => {
@@ -103,7 +209,7 @@ export default function Viewer() {
         }
       }
     });
-  }, [images.length, filePath, images, pageCache]);
+  }, [filePath, images, pageCache]);
 
   useEffect(() => {
     if (images.length > 0 && currentPage < images.length) {
@@ -133,17 +239,24 @@ export default function Viewer() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if (showNextChapterPrompt) {
+        if (e.key === "Escape") {
+          setShowNextChapterPrompt(false);
+        }
+        return;
+      }
+
       if (e.key === "ArrowRight" || e.key === "ArrowDown") {
         if (readingMode === "rtl") {
-          setCurrentPage(p => Math.max(p - 1, 0));
+          goToPreviousPage();
         } else {
-          setCurrentPage(p => Math.min(p + 1, totalPages - 1));
+          goToNextPage();
         }
       } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
         if (readingMode === "rtl") {
-          setCurrentPage(p => Math.min(p + 1, totalPages - 1));
+          goToNextPage();
         } else {
-          setCurrentPage(p => Math.max(p - 1, 0));
+          goToPreviousPage();
         }
       } else if (e.key === "Escape") {
         if (fullscreen) {
@@ -151,7 +264,7 @@ export default function Viewer() {
         } else if (showSettings) {
           setShowSettings(false);
         } else {
-          navigate(-1);
+          returnToComicList();
         }
       } else if (e.key === " " || e.key === "Enter") {
         setShowControls(prev => !prev);
@@ -159,7 +272,7 @@ export default function Viewer() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [totalPages, readingMode, fullscreen, showSettings, navigate]);
+  }, [readingMode, fullscreen, showSettings, showNextChapterPrompt, returnToComicList, goToNextPage, goToPreviousPage]);
 
   useEffect(() => {
     if (fullscreen) {
@@ -199,27 +312,27 @@ export default function Viewer() {
     if (Math.abs(deltaX) > minSwipeDistance && deltaTime < maxSwipeTime) {
       if (readingMode === "rtl") {
         if (deltaX > 0) {
-          setCurrentPage(p => Math.min(p + 1, totalPages - 1));
+          goToNextPage();
         } else {
-          setCurrentPage(p => Math.max(p - 1, 0));
+          goToPreviousPage();
         }
       } else {
         if (deltaX < 0) {
-          setCurrentPage(p => Math.min(p + 1, totalPages - 1));
+          goToNextPage();
         } else {
-          setCurrentPage(p => Math.max(p - 1, 0));
+          goToPreviousPage();
         }
       }
     } else if (Math.abs(deltaY) > minSwipeDistance && deltaTime < maxSwipeTime && isVertical) {
       if (deltaY > 0) {
-        setCurrentPage(p => Math.min(p + 1, totalPages - 1));
+        goToNextPage();
       } else {
-        setCurrentPage(p => Math.max(p - 1, 0));
+        goToPreviousPage();
       }
     }
     
     touchStartRef.current = null;
-  }, [totalPages, readingMode, isVertical]);
+  }, [readingMode, isVertical, goToNextPage, goToPreviousPage]);
 
   const handleTapZone = useCallback((zone: "left" | "center" | "right") => {
     if (zone === "center") {
@@ -229,23 +342,22 @@ export default function Viewer() {
     
     if (readingMode === "rtl") {
       if (zone === "left") {
-        setCurrentPage(p => Math.min(p + 1, totalPages - 1));
+        goToNextPage();
       } else {
-        setCurrentPage(p => Math.max(p - 1, 0));
+        goToPreviousPage();
       }
     } else {
       if (zone === "right") {
-        setCurrentPage(p => Math.min(p + 1, totalPages - 1));
+        goToNextPage();
       } else {
-        setCurrentPage(p => Math.max(p - 1, 0));
+        goToPreviousPage();
       }
     }
-  }, [totalPages, readingMode]);
+  }, [readingMode, goToNextPage, goToPreviousPage]);
 
   const getComicTitle = () => {
     if (!filePath) return "未知漫画";
-    const fileName = filePath.split('/').pop() || "";
-    return fileName.replace(/\.(cbz|zip|epub)$/i, '');
+    return getChapterTitle(filePath);
   };
 
   if (loading) {
@@ -264,7 +376,7 @@ export default function Viewer() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center manga-panel p-8">
           <p className="font-serif text-xl text-destructive mb-4">{error}</p>
-          <button onClick={() => navigate(-1)} className="text-accent hover:underline">
+          <button onClick={returnToComicList} className="text-accent hover:underline">
             返回
           </button>
         </div>
@@ -277,7 +389,7 @@ export default function Viewer() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center manga-panel p-8">
           <p className="font-serif text-2xl">未找到漫画</p>
-          <button onClick={() => navigate(-1)} className="mt-4 text-accent hover:underline">
+          <button onClick={returnToComicList} className="mt-4 text-accent hover:underline">
             返回
           </button>
         </div>
@@ -369,7 +481,7 @@ export default function Viewer() {
           >
             <div className="flex items-center justify-between px-4 py-3">
               <button
-                onClick={() => navigate(-1)}
+                onClick={returnToComicList}
                 className="reader-icon-btn flex items-center gap-2"
                 aria-label="返回"
               >
@@ -458,12 +570,13 @@ export default function Viewer() {
 
               <div className="flex items-center justify-between">
                 <button
-                  onClick={() => setCurrentPage(p => Math.max(p - 1, 0))}
-                  disabled={currentPage === 0}
+                  onClick={goToPreviousChapter}
+                  disabled={!previousChapter}
                   className="reader-nav-btn flex items-center gap-1 text-sm"
+                  title={previousChapter ? `上一话：${previousChapter.title}` : "没有上一话"}
                 >
                   <ChevronLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">上一页</span>
+                  <span className="hidden sm:inline">上一话</span>
                 </button>
 
                 <div className="flex items-center gap-2">
@@ -474,11 +587,12 @@ export default function Viewer() {
                 </div>
 
                 <button
-                  onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages - 1))}
-                  disabled={currentPage >= totalPages - 1}
+                  onClick={continueToNextChapter}
+                  disabled={!nextChapter}
                   className="reader-nav-btn flex items-center gap-1 text-sm"
+                  title={nextChapter ? `下一话：${nextChapter.title}` : "没有下一话"}
                 >
-                  <span className="hidden sm:inline">下一页</span>
+                  <span className="hidden sm:inline">下一话</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
@@ -542,6 +656,28 @@ export default function Viewer() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <Dialog open={showNextChapterPrompt} onOpenChange={setShowNextChapterPrompt}>
+        <DialogContent onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>{nextChapter ? "本话已看完" : "已经看到最后一话"}</DialogTitle>
+            <DialogDescription>
+              {nextChapter ? "是否继续阅读下一话？" : "当前没有更多已下载章节。"}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNextChapterPrompt(false)}>
+              留在本话
+            </Button>
+            {nextChapter && (
+              <Button onClick={continueToNextChapter}>
+                继续看 {nextChapter.title}
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

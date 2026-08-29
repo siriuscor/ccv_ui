@@ -9,6 +9,7 @@ import SettingsDialog from "@/components/SettingsDialog";
 import { type Site, type SiteStatus, type SearchResult, type MangaInfo, type TaskItem, type DownloadedComic, getApi } from "@/lib/api";
 import { motion } from "framer-motion";
 import { toast } from "@/components/ui/sonner";
+import { readLastReadingProgress } from "@/lib/reading-progress";
 
 type View = { type: "search"; tab: "search" | "downloaded" | "queue" } | { type: "chapters"; url: string } | { type: "downloaded_viewer"; comic: DownloadedComic };
 
@@ -53,6 +54,7 @@ const Index = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [downloadedComics, setDownloadedComics] = useState<DownloadedComic[]>([]);
   const [initialized, setInitialized] = useState(false);
+  const [lastReadingProgress] = useState(readLastReadingProgress);
 
   const fetchDownloadedComics = useCallback(async () => {
     if (!downloadPath) return;
@@ -293,6 +295,8 @@ const Index = () => {
                       downloadedComics={downloadedComics}
                       loading={loading}
                       onSearch={handleSearch}
+                      lastReadingProgress={lastReadingProgress}
+                      onContinueReading={handleRead}
                     />
                   ) : (
                     <DownloadQueue

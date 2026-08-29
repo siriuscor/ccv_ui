@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Search, CheckCircle, Loader2, FolderOpen, ArrowLeft } from "lucide-react";
+import { Search, CheckCircle, Loader2, FolderOpen, ArrowLeft, History, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { type Site, type SiteStatus, type SearchResult, type DownloadedComic, getApi } from "@/lib/api";
 import { motion } from "framer-motion";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { type LastReadingProgress } from "@/lib/reading-progress";
 
 type Props = {
   onSelect: (url: string, result: SearchResult) => void;
@@ -17,6 +18,8 @@ type Props = {
   siteStatuses?: Record<string, SiteStatus>;
   activeTab: "search" | "downloaded";
   onSearch: (keyword: string) => void;
+  lastReadingProgress?: LastReadingProgress | null;
+  onContinueReading?: (filePath: string) => void;
 };
 
 export default function ComicSearch({
@@ -30,7 +33,9 @@ export default function ComicSearch({
   loading = false,
   siteStatuses = {},
   onSearch,
-  activeTab
+  activeTab,
+  lastReadingProgress,
+  onContinueReading,
 }: Props) {
   const [query, setQuery] = useState("");
 
@@ -147,6 +152,20 @@ export default function ComicSearch({
             </div>
           </div>
         </div>
+      )}
+
+      {activeTab === "downloaded" && lastReadingProgress && onContinueReading && (
+        <button
+          onClick={() => onContinueReading(lastReadingProgress.filePath)}
+          className="mb-2 px-1 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-manga-success transition-colors w-fit max-w-full"
+          title={`继续阅读 ${lastReadingProgress.comicTitle} ${lastReadingProgress.chapterTitle}`}
+        >
+          <History className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">
+            继续阅读：{lastReadingProgress.comicTitle} · {lastReadingProgress.chapterTitle} · 第 {lastReadingProgress.page + 1} 页
+          </span>
+          <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+        </button>
       )}
 
       {/* Results List */}
